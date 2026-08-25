@@ -1,0 +1,48 @@
+﻿name: el_hrissa_front
+description: El-Hrissa - Application de rencontres et d'evenements tunisienne.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # UI & Design
+  google_fonts: ^6.2.1
+  cupertino_icons: ^1.0.8
+
+  # Images
+  cached_network_image: ^3.3.1
+
+  # Swipe Cards
+  flutter_card_swiper: ^7.0.0
+
+  # HTTP & API
+  dio: ^5.4.3+1
+
+  # Stockage securise (JWT token)
+  flutter_secure_storage: ^9.2.2
+
+  # Gestion d'etat
+  provider: ^6.1.2
+
+  # Utilitaires
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
