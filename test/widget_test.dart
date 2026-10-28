@@ -1,30 +1,23 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Smoke test : sans session, l'app doit rediriger vers l'écran de connexion
+// (garde d'authentification) et ne plus proposer de « mode démo ».
 
-import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:el_hrissa_front/core/auth/auth_state.dart';
 import 'package:el_hrissa_front/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Sans token, l\'app affiche la connexion', (WidgetTester tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    await AuthState.instance.init();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.pumpWidget(const ElHrissaApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Se connecter'), findsWidgets);
+    expect(find.textContaining('Mode Découverte'), findsNothing);
   });
 }
