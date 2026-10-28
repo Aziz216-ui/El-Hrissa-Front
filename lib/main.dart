@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'core/auth/auth_state.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/register_screen.dart';
 import 'features/chat/chat_detail_screen.dart';
@@ -21,7 +22,7 @@ Future<void> main() async {
   runApp(const ElHrissaApp());
 }
 
-const _publicRoutes = {'/login', '/register'};
+const _publicRoutes = {'/login', '/register', '/forgot-password'};
 
 final GoRouter _router = GoRouter(
   initialLocation: '/home',
@@ -38,6 +39,10 @@ final GoRouter _router = GoRouter(
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => ForgotPasswordScreen(initialEmail: state.extra is String ? state.extra as String : ''),
+    ),
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(
       path: '/swipe',

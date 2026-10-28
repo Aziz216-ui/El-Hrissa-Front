@@ -25,6 +25,7 @@ L'application tunisienne de rencontres et d'événements, en Flutter pour mobile
 | 💬 **Chat** | Conversations avec dernier message, rafraîchissement automatique, signalement, blocage, suppression de match |
 | 🎉 **Événements** | Liste, détail et participants, inscription en un tap, découverte des autres participants |
 | 👤 **Profil** | Bio, intérêts, préférence de rencontre, galerie de photos, position, badge « profil vérifié » par selfie |
+| 🔑 **Compte** | Mot de passe oublié par email, état de vérification de l'email, suppression définitive du compte (avec confirmation) |
 | 🔔 **Notifications** | Nouveaux matchs et messages avec compteur de non lus |
 | 🛡️ **Sécurité** | Garde d'authentification, déconnexion automatique à l'expiration de session, liste des utilisateurs bloqués |
 | 🧑‍💼 **Organisateurs** | Création et suppression d'événements depuis l'app |
@@ -105,7 +106,7 @@ Déclarez ensuite les permissions **localisation** et **caméra** (`AndroidManif
 - [x] Swipe, matchs, chat, événements, notifications, profil complet
 - [x] Blocage, signalement, vérification par selfie
 - [ ] Génération des projets Android et iOS, puis tests sur appareils
-- [ ] Mot de passe oublié et suppression de compte
+- [x] Mot de passe oublié, suppression de compte, bandeau « email non vérifié »
 - [ ] Notifications push et chat en temps réel (aujourd'hui, rafraîchissement toutes les 4 s)
 - [ ] Espace de modération pour les organisateurs (signalements, validation des selfies)
 - [ ] Publication : APK, version web (PWA), stores

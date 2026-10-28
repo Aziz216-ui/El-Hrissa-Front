@@ -24,6 +24,8 @@ class Endpoints {
   static const String login = '/api/auth/login';
   static const String register = '/api/auth/register';
   static const String resendVerification = '/api/auth/resend-verification';
+  static const String forgotPassword = '/api/auth/forgot-password';
+  static String user(int id) => '/api/users/$id';
 
   // Profils
   static const String myProfile = '/api/profiles/me';

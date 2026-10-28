@@ -123,6 +123,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setDialog) => AlertDialog(
+            title: const Text('Supprimer mon compte ?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Cette action est définitive : votre profil, vos photos, vos matchs et vos messages '
+                  'seront supprimés et ne pourront pas être récupérés.',
+                ),
+                const SizedBox(height: 16),
+                const Text('Tapez SUPPRIMER pour confirmer :'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (_) => setDialog(() {}),
+                  decoration: const InputDecoration(hintText: 'SUPPRIMER'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+              TextButton(
+                onPressed: controller.text.trim().toUpperCase() == 'SUPPRIMER' ? () => Navigator.pop(ctx, true) : null,
+                child: const Text('Supprimer définitivement', style: TextStyle(color: AppColors.error)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (confirmed != true) return;
+    try {
+      await _authService.deleteMyAccount(); // déconnecte puis le routeur renvoie vers /login
+    } catch (e) {
+      if (mounted) showSnack(context, cleanError(e), error: true);
+    }
+  }
+
+  Widget _buildEmailBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.pastelPink, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          const Icon(Icons.mark_email_unread_outlined, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "Votre email n'est pas vérifié. Ouvrez le lien reçu par email, puis actualisez cette page.",
+              style: AppTextStyles.labelSm.copyWith(color: AppColors.primaryDark),
+            ),
+          ),
+          TextButton(onPressed: _resendVerificationEmail, child: const Text('Renvoyer')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,6 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         children: [
                           _buildHeader(),
+                          if (!_profile!.emailVerified) _buildEmailBanner(),
                           _buildStats(),
                           _buildInterests(),
                           _buildSettings(),
@@ -259,6 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _SettingItem(Icons.block, 'Utilisateurs bloqués', () => context.push('/blocked')),
       _SettingItem(Icons.mark_email_read_outlined, "Renvoyer l'email de vérification", _resendVerificationEmail),
       _SettingItem(Icons.logout, 'Se déconnecter', _logout, destructive: true),
+      _SettingItem(Icons.delete_forever_outlined, 'Supprimer mon compte', _deleteAccount, destructive: true),
     ];
     return Column(
       children: items

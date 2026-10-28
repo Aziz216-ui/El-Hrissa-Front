@@ -64,6 +64,27 @@ class AuthService {
     }
   }
 
+  /// Le backend répond toujours 204, que l'adresse soit connue ou non.
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _api.dio.post(Endpoints.forgotPassword, data: {'email': email.trim()});
+    } on DioException catch (e) {
+      throw Exception(apiErrorMessage(e, "Impossible d'envoyer l'email"));
+    }
+  }
+
+  /// Supprime définitivement le compte connecté (profil, photos, matchs, messages...), puis déconnecte.
+  Future<void> deleteMyAccount() async {
+    final id = await _api.getUserId();
+    if (id == null) throw Exception('Session introuvable, reconnectez-vous');
+    try {
+      await _api.dio.delete(Endpoints.user(id));
+    } on DioException catch (e) {
+      throw Exception(apiErrorMessage(e, 'Impossible de supprimer le compte'));
+    }
+    await logout();
+  }
+
   Future<void> logout() async {
     await _api.clearToken();
     AuthState.instance.setLoggedOut();

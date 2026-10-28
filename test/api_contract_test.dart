@@ -194,6 +194,32 @@ void main() {
     expect(await ApiClient().hasToken(), isFalse);
   }, timeout: const Timeout(Duration(minutes: 2)));
 
+  test("Mot de passe oublié, état de l'email et suppression de compte", () async {
+    if (!await _backendUp()) {
+      markTestSkipped('Backend injoignable sur ${Endpoints.baseUrl}');
+      return;
+    }
+    final u = await _signup('d', 'WOMEN');
+    final email = (await _emailOf(u.token))!;
+
+    // Un compte neuf n'a pas encore vérifié son email
+    expect((await ProfileService().getMyProfile()).emailVerified, isFalse);
+
+    // Même réponse (succès) que l'adresse existe ou non : pas de fuite sur les comptes inscrits
+    await AuthService().forgotPassword(email);
+    await AuthService().forgotPassword('personne-${DateTime.now().microsecondsSinceEpoch}@contract.tn');
+
+    // Suppression définitive : déconnexion, puis le compte n'existe plus
+    await _fillProfile('Dora');
+    await AuthService().deleteMyAccount();
+    expect(AuthState.instance.loggedIn, isFalse);
+    expect(await ApiClient().hasToken(), isFalse);
+    await expectLater(
+      AuthService().login(email, 'Passw0rd!'),
+      throwsA(predicate((e) => e.toString().contains('incorrect'))),
+    );
+  }, timeout: const Timeout(Duration(minutes: 1)));
+
   test('Une erreur serveur est traduite en message lisible', () async {
     if (!await _backendUp()) {
       markTestSkipped('Backend injoignable');
