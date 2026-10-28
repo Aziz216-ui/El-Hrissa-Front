@@ -83,7 +83,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
     if (_items.isEmpty) {
       return const EmptyView(
-        emoji: '🔔',
+        icon: Icons.notifications_none_rounded,
         title: 'Rien pour le moment',
         subtitle: 'Vous serez prévenu(e) ici de vos nouveaux matchs et messages.',
       );

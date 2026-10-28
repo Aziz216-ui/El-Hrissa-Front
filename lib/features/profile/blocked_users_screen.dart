@@ -62,7 +62,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
               ? ErrorView(message: _error!, onRetry: _load)
               : _users.isEmpty
                   ? const EmptyView(
-                      emoji: '🛡️',
+                      icon: Icons.shield_outlined,
                       title: 'Personne n\'est bloqué',
                       subtitle: 'Les profils que vous bloquez apparaîtront ici.',
                     )

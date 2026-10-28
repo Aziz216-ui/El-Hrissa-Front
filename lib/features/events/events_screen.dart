@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/utils/format.dart';
 import '../../shared/widgets/bottom_nav.dart';
+import '../../shared/widgets/brand.dart';
 import '../../shared/widgets/network_photo.dart';
 import '../../shared/widgets/state_views.dart';
 
@@ -63,7 +64,7 @@ class _EventsScreenState extends State<EventsScreen> {
         await _service.joinEvent(event.id);
       }
       if (!mounted) return;
-      showSnack(context, wasJoined ? 'Inscription annulée' : 'Vous participez à « ${event.name} » 🎉');
+      showSnack(context, wasJoined ? 'Inscription annulée' : 'Vous participez à « ${event.name} »');
       await _load();
     } catch (e) {
       if (mounted) showSnack(context, cleanError(e), error: true);
@@ -76,8 +77,6 @@ class _EventsScreenState extends State<EventsScreen> {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceWhite,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => const _CreateEventSheet(),
     );
     if (created == true) _load();
@@ -114,8 +113,6 @@ class _EventsScreenState extends State<EventsScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceWhite,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _EventDetailSheet(
         event: event,
         joined: _joined.contains(event.id),
@@ -142,7 +139,8 @@ class _EventsScreenState extends State<EventsScreen> {
               onPressed: _createEvent,
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.white,
-              icon: const Icon(Icons.add),
+              elevation: 2,
+              icon: const Icon(Icons.add_rounded),
               label: const Text('Créer'),
             )
           : null,
@@ -151,7 +149,7 @@ class _EventsScreenState extends State<EventsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Text('Événements', style: AppTextStyles.headlineLgMobile),
             ),
             Expanded(child: _buildBody()),
@@ -167,7 +165,7 @@ class _EventsScreenState extends State<EventsScreen> {
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
     if (_events.isEmpty) {
       return const EmptyView(
-        emoji: '🎉',
+        icon: Icons.event_available_outlined,
         title: 'Aucun événement à venir',
         subtitle: 'Les prochaines sorties organisées apparaîtront ici.',
       );
@@ -176,7 +174,7 @@ class _EventsScreenState extends State<EventsScreen> {
       color: AppColors.primary,
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 96),
         itemCount: _events.length,
         itemBuilder: (context, index) => _buildCard(_events[index]),
       ),
@@ -186,70 +184,93 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget _buildCard(EventResponse event) {
     final joined = _joined.contains(event.id);
     final busy = _busy.contains(event.id);
-    return GestureDetector(
-      onTap: () => _openDetail(event),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceWhite,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 4))],
+    final hasVenue = event.venueName != null && event.venueName!.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Material(
+        color: AppColors.surfaceWhite,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: const BorderSide(color: AppColors.outlineVariant),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _openDetail(event),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(color: AppColors.pastelPink, borderRadius: BorderRadius.circular(999)),
-                  child: Text(formatEventDate(event.startsAt),
-                      style: AppTextStyles.labelSm.copyWith(color: AppColors.primaryDark)),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ExcludeSemantics(child: EventDateStub(date: event.startsAt)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(event.name, style: AppTextStyles.titleMd, maxLines: 2, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          Text(formatEventDate(event.startsAt), style: AppTextStyles.labelSm),
+                          if (hasVenue) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.place_outlined, size: 16, color: AppColors.sidi),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    event.venueName!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Semantics(
+                      label: '${event.attendeeCount} participants',
+                      excludeSemantics: true,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.group_outlined, size: 18, color: AppColors.outline),
+                          const SizedBox(width: 4),
+                          Text('${event.attendeeCount}', style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                const Icon(Icons.people_outline, size: 18, color: AppColors.outline),
-                const SizedBox(width: 4),
-                Text('${event.attendeeCount}', style: AppTextStyles.labelSm),
+                const SizedBox(height: 14),
+                joined
+                    ? OutlinedButton.icon(
+                        onPressed: busy ? null : () => _toggle(event),
+                        icon: const Icon(Icons.check_circle_rounded, size: 18),
+                        label: const Text('Inscrit · Annuler'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: busy ? null : () => _toggle(event),
+                        style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+                        child: busy
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Text("S'inscrire"),
+                      ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(event.name, style: AppTextStyles.headlineMd.copyWith(fontSize: 20)),
-            if (event.venueName != null && event.venueName!.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(Icons.place_outlined, size: 16, color: AppColors.primary),
-                  const SizedBox(width: 4),
-                  Expanded(child: Text(event.venueName!, style: AppTextStyles.bodyMdMuted)),
-                ],
-              ),
-            ],
-            const SizedBox(height: 14),
-            joined
-                ? OutlinedButton.icon(
-                    onPressed: busy ? null : () => _toggle(event),
-                    icon: const Icon(Icons.check_circle, size: 18),
-                    label: const Text('Inscrit · Annuler'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      minimumSize: const Size(double.infinity, 46),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  )
-                : ElevatedButton(
-                    onPressed: busy ? null : () => _toggle(event),
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 46)),
-                    child: busy
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Text("S'inscrire"),
-                  ),
-          ],
+          ),
         ),
       ),
     );
@@ -299,30 +320,40 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
       maxChildSize: 0.95,
       builder: (context, controller) => ListView(
         controller: controller,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
         children: [
-          Text(e.name, style: AppTextStyles.headlineMd),
-          const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.event, size: 18, color: AppColors.primary),
-            const SizedBox(width: 6),
-            Text(formatEventDate(e.startsAt), style: AppTextStyles.bodyMd),
-          ]),
-          if (e.venueName != null && e.venueName!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(children: [
-              const Icon(Icons.place_outlined, size: 18, color: AppColors.primary),
-              const SizedBox(width: 6),
-              Expanded(child: Text(e.venueName!, style: AppTextStyles.bodyMd)),
-            ]),
-          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(child: EventDateStub(date: e.startsAt, size: 64)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(e.name, style: AppTextStyles.headlineMd),
+                    const SizedBox(height: 6),
+                    Text(formatEventDate(e.startsAt), style: AppTextStyles.bodyMdMuted),
+                    if (e.venueName != null && e.venueName!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(children: [
+                        const Icon(Icons.place_outlined, size: 18, color: AppColors.sidi),
+                        const SizedBox(width: 4),
+                        Expanded(child: Text(e.venueName!, style: AppTextStyles.bodyMd)),
+                      ]),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
           if (e.description != null && e.description!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(e.description!, style: AppTextStyles.bodyMdMuted),
+            const SizedBox(height: 20),
+            Text(e.description!, style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant)),
           ],
-          const SizedBox(height: 20),
-          Text('Participants (${e.attendeeCount})', style: AppTextStyles.labelMd),
-          const SizedBox(height: 10),
+          const SizedBox(height: 24),
+          Text('Participants (${e.attendeeCount})', style: AppTextStyles.titleMd.copyWith(fontSize: 18)),
+          const SizedBox(height: 12),
           if (_attendees == null)
             const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: AppColors.primary)))
           else if (_attendees!.isEmpty)
@@ -350,22 +381,13 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
           if (widget.joined) ...[
             ElevatedButton.icon(
               onPressed: widget.onDiscover,
-              icon: const Icon(Icons.style),
+              icon: const Icon(Icons.style_rounded),
               label: const Text('Découvrir les participants'),
             ),
             const SizedBox(height: 10),
           ],
           widget.joined
-              ? OutlinedButton(
-                  onPressed: widget.onToggle,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    minimumSize: const Size(double.infinity, 52),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: const Text('Annuler mon inscription'),
-                )
+              ? OutlinedButton(onPressed: widget.onToggle, child: const Text('Annuler mon inscription'))
               : ElevatedButton(onPressed: widget.onToggle, child: const Text("S'inscrire")),
           if (widget.canDelete) ...[
             const SizedBox(height: 10),
@@ -470,13 +492,8 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: _pickDate,
-                icon: const Icon(Icons.event),
+                icon: const Icon(Icons.event_rounded),
                 label: Text(_startsAt == null ? 'Date et heure' : formatEventDate(_startsAt)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(

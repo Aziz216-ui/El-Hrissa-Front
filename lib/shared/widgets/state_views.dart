@@ -17,10 +17,10 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off, size: 48, color: AppColors.outline),
-            const SizedBox(height: 12),
-            Text(message, style: AppTextStyles.bodyMdMuted, textAlign: TextAlign.center),
+            const _IconBadge(icon: Icons.wifi_off_rounded, color: AppColors.onSurfaceVariant, tint: AppColors.surfaceContainer),
             const SizedBox(height: 16),
+            Text(message, style: AppTextStyles.bodyMdMuted, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(minimumSize: const Size(160, 48)),
@@ -33,9 +33,9 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// État vide (aucune donnée) avec message et action optionnelle.
+/// État vide (aucune donnée) : dit ce qui manque et propose une action.
 class EmptyView extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String title;
   final String subtitle;
   final String? actionLabel;
@@ -43,7 +43,7 @@ class EmptyView extends StatelessWidget {
 
   const EmptyView({
     super.key,
-    required this.emoji,
+    required this.icon,
     required this.title,
     required this.subtitle,
     this.actionLabel,
@@ -58,13 +58,13 @@ class EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
+            _IconBadge(icon: icon, color: AppColors.primary, tint: AppColors.pastelPink),
+            const SizedBox(height: 20),
             Text(title, style: AppTextStyles.headlineMd, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(subtitle, style: AppTextStyles.bodyMdMuted, textAlign: TextAlign.center),
             if (actionLabel != null) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
@@ -74,6 +74,33 @@ class EmptyView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Icône dans une arche teintée : même forme que le logo.
+class _IconBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color tint;
+  const _IconBadge({required this.icon, required this.color, required this.tint});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 84,
+      height: 96,
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(42),
+          topRight: Radius.circular(42),
+          bottomLeft: Radius.circular(14),
+          bottomRight: Radius.circular(14),
+        ),
+      ),
+      alignment: const Alignment(0, 0.15),
+      child: Icon(icon, size: 36, color: color),
     );
   }
 }

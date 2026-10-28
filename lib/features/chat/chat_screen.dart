@@ -133,7 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
     if (_conversations.isEmpty) {
       return EmptyView(
-        emoji: '💬',
+        icon: Icons.chat_bubble_outline_rounded,
         title: 'Pas encore de match',
         subtitle: 'Likez des profils : dès que le sentiment est mutuel, vous pourrez discuter ici.',
         actionLabel: 'Découvrir des profils',
@@ -173,7 +173,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Text(profile.displayName, style: AppTextStyles.labelMd),
                   const SizedBox(height: 2),
                   Text(
-                    last?.content ?? 'Nouveau match ! Dites bonjour 🌶️',
+                    last?.content ?? 'Nouveau match. Dites bonjour !',
                     style: AppTextStyles.bodyMdMuted,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

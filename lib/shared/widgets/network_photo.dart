@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart' show ImageRenderMethodForWeb;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -27,6 +28,8 @@ class NetworkPhoto extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      // Sur le web, le mode <img> par défaut s'affiche en noir / échoue : on télécharge les octets.
+      imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
       placeholder: (_, __) => Container(width: width, height: height, color: AppColors.surfaceLow),
       errorWidget: (_, __, ___) => _fallback(),
     );

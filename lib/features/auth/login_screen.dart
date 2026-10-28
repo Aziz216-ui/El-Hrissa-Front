@@ -189,13 +189,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Pas encore de compte ? ', style: AppTextStyles.bodyMd),
-                      GestureDetector(
-                        onTap: () => context.go('/register'),
-                        child: Text(
-                          'S\'inscrire',
-                          style: AppTextStyles.labelMdPrimary,
-                        ),
+                      Text('Pas encore de compte ?', style: AppTextStyles.bodyMdMuted),
+                      TextButton(
+                        onPressed: () => context.go('/register'),
+                        child: const Text('Créer un compte'),
                       ),
                     ],
                   ),

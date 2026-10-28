@@ -229,7 +229,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
     if (_messages.isEmpty) {
       return Center(
-        child: Text('Envoyez un premier message à ${widget.userName} ! 🌶️', style: AppTextStyles.bodyMdMuted),
+        child: Text('Envoyez un premier message à ${widget.userName}.', style: AppTextStyles.bodyMdMuted),
       );
     }
     return ListView.builder(

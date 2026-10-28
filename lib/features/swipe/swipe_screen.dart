@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/utils/location_helper.dart';
 import '../../shared/widgets/bottom_nav.dart';
+import '../../shared/widgets/brand.dart';
 import '../../shared/widgets/network_photo.dart';
 import '../../shared/widgets/notification_bell.dart';
 import '../../shared/widgets/state_views.dart';
@@ -32,6 +33,10 @@ class _SwipeScreenState extends State<SwipeScreen> {
   String? _error;
   bool _needsLocation = false;
   int _currentIndex = 0;
+
+  // Déplacement horizontal de la carte pendant le glissement
+  double _dragDx = 0;
+  bool _dragging = false;
 
   // Filtres
   double _radiusKm = 50;
@@ -259,7 +264,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
     if (_currentIndex >= _candidates.length) {
       return EmptyView(
-        emoji: '🌶️',
+        icon: Icons.explore_outlined,
         title: 'Plus de profils pour le moment',
         subtitle: 'Élargissez la distance ou la tranche d\'âge, ou revenez un peu plus tard.',
         actionLabel: 'Actualiser',
@@ -273,41 +278,70 @@ class _SwipeScreenState extends State<SwipeScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: GestureDetector(
+              onHorizontalDragStart: (_) => setState(() => _dragging = true),
+              onHorizontalDragUpdate: (d) => setState(() => _dragDx += d.delta.dx),
+              onHorizontalDragCancel: _resetDrag,
               onHorizontalDragEnd: (details) {
                 final v = details.primaryVelocity ?? 0;
-                if (v > 300) _onSwipe(true);
-                if (v < -300) _onSwipe(false);
+                final liked = _dragDx > 100 || v > 500;
+                final passed = _dragDx < -100 || v < -500;
+                _resetDrag();
+                if (liked) {
+                  _onSwipe(true);
+                } else if (passed) {
+                  _onSwipe(false);
+                }
               },
-              child: _buildCard(_candidates[_currentIndex]),
+              child: AnimatedContainer(
+                duration: _dragging ? Duration.zero : const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                transformAlignment: Alignment.bottomCenter,
+                transform: Matrix4.translationValues(_dragDx, 0, 0)..rotateZ(_dragDx / 1400),
+                child: _buildCard(_candidates[_currentIndex]),
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         _buildActionButtons(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
       ],
     );
   }
 
+  void _resetDrag() {
+    if (_dragDx == 0 && !_dragging) return;
+    setState(() {
+      _dragDx = 0;
+      _dragging = false;
+    });
+  }
+
   Widget _buildIncompleteBanner() {
-    return GestureDetector(
-      onTap: () => context.push('/profile/edit'),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(color: AppColors.pastelPink, borderRadius: BorderRadius.circular(14)),
-        child: Row(
-          children: [
-            const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Ajoutez une photo et une bio pour apparaître dans les suggestions des autres.',
-                style: AppTextStyles.labelSm.copyWith(color: AppColors.primaryDark),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Material(
+        color: AppColors.pastelPink,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          onTap: () => context.push('/profile/edit'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Ajoutez une photo et une bio pour apparaître dans les suggestions des autres.',
+                    style: AppTextStyles.labelSm.copyWith(color: AppColors.primaryDark),
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.primary),
+              ],
             ),
-            const Icon(Icons.chevron_right, color: AppColors.primary),
-          ],
+          ),
         ),
       ),
     );
@@ -315,31 +349,30 @@ class _SwipeScreenState extends State<SwipeScreen> {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       child: Row(
         children: [
           if (widget.eventId != null)
             IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              tooltip: 'Retour',
               onPressed: () => context.pop(),
-              icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
+              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
+            )
+          else
+            IconButton(
+              tooltip: 'Filtres',
+              onPressed: _openFilters,
+              icon: const Icon(Icons.tune_rounded, color: AppColors.onSurface),
             ),
-          if (widget.eventId != null) const SizedBox(width: 12),
-          GestureDetector(
-            onTap: _openFilters,
-            child: Row(
-              children: [
-                const Icon(Icons.tune, color: AppColors.primary, size: 20),
-                const SizedBox(width: 4),
-                Text('Filtres', style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant)),
-              ],
+          const Spacer(),
+          const Wordmark(),
+          const Spacer(),
+          if (widget.eventId != null)
+            IconButton(
+              tooltip: 'Filtres',
+              onPressed: _openFilters,
+              icon: const Icon(Icons.tune_rounded, color: AppColors.onSurface),
             ),
-          ),
-          const Spacer(),
-          Text('Elahrisa', style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary, fontStyle: FontStyle.italic)),
-          const Text(' 🌶️', style: TextStyle(fontSize: 20)),
-          const Spacer(),
           const NotificationBell(),
         ],
       ),
@@ -349,13 +382,14 @@ class _SwipeScreenState extends State<SwipeScreen> {
   Widget _buildCard(CandidateResponse candidate) {
     final p = candidate.profile;
     final ageText = p.age != null ? ', ${p.age}' : '';
+    final stamp = (_dragDx.abs() / 110).clamp(0.0, 1.0);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, 10))],
+        borderRadius: archRadius(),
+        boxShadow: [BoxShadow(color: AppColors.onSurface.withValues(alpha: 0.18), blurRadius: 28, offset: const Offset(0, 12))],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: archRadius(),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -363,30 +397,40 @@ class _SwipeScreenState extends State<SwipeScreen> {
             Container(decoration: const BoxDecoration(gradient: AppColors.photoGradient)),
             if (candidate.distanceKm != null)
               Positioned(
-                top: 16,
+                top: 20,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.9),
+                      color: AppColors.white.withValues(alpha: 0.94),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('🌶️', style: TextStyle(fontSize: 16)),
-                        const SizedBox(width: 6),
+                        const Icon(Icons.place_rounded, size: 16, color: AppColors.sidi),
+                        const SizedBox(width: 4),
                         Text(
                           candidate.distanceKm! < 1
                               ? 'À moins de 1 km'
                               : 'À ${candidate.distanceKm!.toStringAsFixed(1)} km',
-                          style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
+                          style: AppTextStyles.labelMd.copyWith(color: AppColors.sidi),
                         ),
                       ],
                     ),
                   ),
+                ),
+              ),
+            if (_dragDx != 0)
+              Positioned(
+                top: 84,
+                left: _dragDx > 0 ? 24 : null,
+                right: _dragDx < 0 ? 24 : null,
+                child: Opacity(
+                  opacity: stamp,
+                  child: _DecisionStamp(liked: _dragDx > 0),
                 ),
               ),
             Positioned(
@@ -441,15 +485,17 @@ class _SwipeScreenState extends State<SwipeScreen> {
       children: [
         _ActionButton(
           onTap: () => _onSwipe(false),
-          icon: Icons.close,
+          icon: Icons.close_rounded,
+          label: 'Passer',
           color: AppColors.onSurfaceVariant,
           backgroundColor: AppColors.surfaceWhite,
           size: 60,
         ),
-        const SizedBox(width: 32),
+        const SizedBox(width: 36),
         _ActionButton(
           onTap: () => _onSwipe(true),
-          icon: Icons.favorite,
+          icon: Icons.favorite_rounded,
+          label: "J'aime",
           color: AppColors.white,
           backgroundColor: AppColors.primary,
           size: 72,
@@ -459,9 +505,11 @@ class _SwipeScreenState extends State<SwipeScreen> {
   }
 }
 
+/// Bouton rond avec retour visuel (ripple), libellé pour les lecteurs d'écran et info-bulle.
 class _ActionButton extends StatelessWidget {
   final VoidCallback onTap;
   final IconData icon;
+  final String label;
   final Color color;
   final Color backgroundColor;
   final double size;
@@ -469,6 +517,7 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.onTap,
     required this.icon,
+    required this.label,
     required this.color,
     required this.backgroundColor,
     required this.size,
@@ -476,17 +525,52 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: Material(
           color: backgroundColor,
-          shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 15, offset: const Offset(0, 4))],
+          shape: const CircleBorder(side: BorderSide(color: AppColors.outlineVariant)),
+          elevation: 2,
+          shadowColor: AppColors.onSurface.withValues(alpha: 0.25),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(width: size, height: size, child: Icon(icon, color: color, size: size * 0.45)),
+          ),
         ),
-        child: Icon(icon, color: color, size: size * 0.45),
+      ),
+    );
+  }
+}
+
+/// Mention qui apparaît pendant le glissement : texte + icône, jamais la couleur seule.
+class _DecisionStamp extends StatelessWidget {
+  final bool liked;
+  const _DecisionStamp({required this.liked});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = liked ? AppColors.white : AppColors.onSurface;
+    return Transform.rotate(
+      angle: liked ? -0.12 : 0.12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: liked ? AppColors.primary : AppColors.white,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(liked ? Icons.favorite_rounded : Icons.close_rounded, size: 20, color: color),
+            const SizedBox(width: 6),
+            Text(liked ? "J'aime" : 'Passer', style: AppTextStyles.titleMd.copyWith(color: color)),
+          ],
+        ),
       ),
     );
   }
@@ -501,22 +585,24 @@ class _MatchDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            UserAvatar(url: photoUrl, radius: 44),
-            const SizedBox(height: 12),
-            Text("C'est un Match !", style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary)),
+            ClipRRect(
+              borderRadius: archRadius(top: 55, bottom: 16),
+              child: SizedBox(width: 110, height: 128, child: NetworkPhoto(url: photoUrl, width: 110, height: 128)),
+            ),
+            const SizedBox(height: 16),
+            Text("C'est un match", style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary)),
             const SizedBox(height: 8),
-            Text('Vous et $name vous plaisez mutuellement !',
-                style: AppTextStyles.bodyMd, textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            if (onMessage != null) ElevatedButton(onPressed: onMessage, child: const Text('Envoyer un message')),
-            const SizedBox(height: 8),
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Continuer')),
+            Text('Vous et $name vous plaisez mutuellement.',
+                style: AppTextStyles.bodyMdMuted, textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            if (onMessage != null) ElevatedButton(onPressed: onMessage, child: Text('Écrire à $name')),
+            const SizedBox(height: 4),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Continuer à découvrir')),
           ],
         ),
       ),
