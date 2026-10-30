@@ -91,7 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.go('/login'),
+          tooltip: 'Retour',
+          onPressed: () => context.go('/welcome'),
         ),
         title: Text('Créer un compte', style: AppTextStyles.headlineMd),
       ),

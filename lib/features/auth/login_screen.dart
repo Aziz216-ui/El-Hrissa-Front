@@ -59,6 +59,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
+          tooltip: 'Retour',
+          onPressed: () => context.go('/welcome'),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

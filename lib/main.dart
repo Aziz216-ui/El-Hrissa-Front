@@ -16,6 +16,7 @@ import 'features/profile/blocked_users_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/swipe/swipe_screen.dart';
+import 'features/welcome/welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,7 @@ Future<void> main() async {
   runApp(const ElHrissaApp());
 }
 
-const _publicRoutes = {'/login', '/register', '/forgot-password'};
+const _publicRoutes = {'/welcome', '/login', '/register', '/forgot-password'};
 
 final GoRouter _router = GoRouter(
   initialLocation: '/home',
@@ -33,11 +34,12 @@ final GoRouter _router = GoRouter(
     final path = state.matchedLocation;
     final isPublic = _publicRoutes.contains(path);
 
-    if (!loggedIn && !isPublic) return '/login';
+    if (!loggedIn && !isPublic) return '/welcome';
     if (loggedIn && isPublic) return '/home';
     return null;
   },
   routes: [
+    GoRoute(path: '/welcome', builder: (context, state) => const WelcomeScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
     GoRoute(
