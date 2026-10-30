@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/auth/auth_state.dart';
 import '../../core/models/profile_models.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/event_service.dart';
@@ -327,6 +328,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _SettingItem(Icons.verified_outlined, 'Vérifier mon profil', _verifyProfile),
       _SettingItem(Icons.notifications_outlined, 'Notifications', () => context.push('/notifications')),
       _SettingItem(Icons.block, 'Utilisateurs bloqués', () => context.push('/blocked')),
+      if (AuthState.instance.isOrganizer)
+        _SettingItem(Icons.admin_panel_settings_outlined, 'Modération', () => context.push('/moderation')),
       _SettingItem(Icons.mark_email_read_outlined, "Renvoyer l'email de vérification", _resendVerificationEmail),
       _SettingItem(Icons.logout, 'Se déconnecter', _logout, destructive: true),
       _SettingItem(Icons.delete_forever_outlined, 'Supprimer mon compte', _deleteAccount, destructive: true),

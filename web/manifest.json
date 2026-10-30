@@ -1,12 +1,13 @@
 {
-    "name": "el_hrissa_front",
-    "short_name": "el_hrissa_front",
+    "name": "Elahrisa",
+    "short_name": "Elahrisa",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#B3141D",
+    "theme_color": "#B3141D",
+    "description": "Rencontres et événements en Tunisie",
     "orientation": "portrait-primary",
+    "lang": "fr",
     "prefer_related_applications": false,
     "icons": [
         {

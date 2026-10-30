@@ -10,6 +10,7 @@ import 'features/chat/chat_detail_screen.dart';
 import 'features/chat/chat_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/moderation/moderation_screen.dart';
 import 'features/notifications/notifications_screen.dart';
 import 'features/profile/blocked_users_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
@@ -68,6 +69,7 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/profile/edit', builder: (context, state) => const EditProfileScreen()),
     GoRoute(path: '/blocked', builder: (context, state) => const BlockedUsersScreen()),
     GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+    GoRoute(path: '/moderation', builder: (context, state) => const ModerationScreen()),
   ],
   errorBuilder: (context, state) => const Scaffold(
     body: Center(child: Text('Page introuvable', style: TextStyle(color: AppColors.onSurfaceVariant))),

@@ -15,6 +15,7 @@ String apiErrorMessage(Object error, String fallback) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+        return 'Le serveur met du temps à répondre (il se réveille peut-être). Réessayez dans une minute.';
       case DioExceptionType.connectionError:
         return 'Serveur injoignable. Vérifiez votre connexion.';
       default:

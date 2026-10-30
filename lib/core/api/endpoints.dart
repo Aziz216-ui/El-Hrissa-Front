@@ -63,4 +63,10 @@ class Endpoints {
   static const String blocks = '/api/blocks';
   static String unblock(int userId) => '/api/blocks/$userId';
   static const String reports = '/api/reports';
+
+  // Modération (organisateurs)
+  static String moderateReport(int id) => '/api/reports/$id/moderate';
+  static const String pendingVerifications = '/api/profiles/verifications/pending';
+  static String verificationSelfie(int userId) => '/api/profiles/verifications/$userId/selfie';
+  static String reviewVerification(int userId) => '/api/profiles/verifications/$userId/review';
 }
