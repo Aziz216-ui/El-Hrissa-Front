@@ -1,0 +1,36 @@
+name: Web
+
+# À chaque push : analyse et tests.
+# Sur main, si les secrets Netlify sont renseignés : construit la version web et la publie.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  API_BASE_URL: https://el-hrissa.onrender.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build web
+        run: flutter build web --release --dart-define=API_BASE_URL=$API_BASE_URL
+      - name: Redirection des routes vers index.html
+        run: echo '/*  /index.html  200' > build/web/_redirects
+
+      - name: Publier sur Netlify
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.NETLIFY_AUTH_TOKEN != '' && env.NETLIFY_SITE_ID != ''
+        run: npx --yes netlify-cli@17 deploy --dir=build/web --prod --site "$NETLIFY_SITE_ID" --auth "$NETLIFY_AUTH_TOKEN" --message "${{ github.sha }}"
