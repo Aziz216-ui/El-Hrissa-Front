@@ -60,10 +60,27 @@ class LegalScreen extends StatelessWidget {
 /// Phrase de consentement avec liens vers les deux textes, à placer sous les boutons.
 class LegalLinks extends StatelessWidget {
   final TextAlign align;
-  const LegalLinks({super.key, this.align = TextAlign.center});
+
+  /// Version sobre : seulement les deux liens, sans phrase (accueil).
+  final bool short;
+  const LegalLinks({super.key, this.align = TextAlign.center}) : short = false;
+  const LegalLinks.short({super.key})
+      : align = TextAlign.center,
+        short = true;
 
   @override
   Widget build(BuildContext context) {
+    if (short) {
+      return Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 20,
+        children: [
+          _link(context, "Conditions d'utilisation", '/terms'),
+          _link(context, 'Confidentialité', '/privacy'),
+        ],
+      );
+    }
     return Wrap(
       alignment: align == TextAlign.center ? WrapAlignment.center : WrapAlignment.start,
       crossAxisAlignment: WrapCrossAlignment.center,

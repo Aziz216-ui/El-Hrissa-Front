@@ -18,11 +18,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Créer un compte'), findsOneWidget);
-    expect(find.text("J'ai déjà un compte"), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
     expect(find.textContaining('Mode Découverte'), findsNothing);
 
     // Les textes légaux sont accessibles depuis l'accueil
-    await tester.tap(find.text("conditions d'utilisation"));
+    await tester.tap(find.text("Conditions d'utilisation"));
     await tester.pumpAndSettle();
     expect(find.textContaining('Dernière mise à jour'), findsOneWidget);
     expect(find.text('Qui peut utiliser Elahrisa'), findsOneWidget);
@@ -30,8 +30,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Créer un compte'), findsOneWidget);
 
-    // « J'ai déjà un compte » mène à la connexion
-    await tester.tap(find.text("J'ai déjà un compte"));
+    // « Se connecter » mène à la connexion
+    await tester.tap(find.text('Se connecter'));
     await tester.pumpAndSettle();
     expect(find.text('Se connecter'), findsWidgets);
   });

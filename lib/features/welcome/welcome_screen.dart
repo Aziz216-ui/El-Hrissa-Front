@@ -11,8 +11,8 @@ import '../legal/legal_screen.dart';
 /// L'idée : l'app s'appelle Elahrisa, comme la harissa, et la boîte de harissa est l'objet que
 /// chaque table tunisienne connaît. L'écran est son étiquette : un fond rouge imprimé de
 /// carreaux étoilés (khatem), « أهلا بيك » peint en grand comme une enseigne de souk, un piment
-/// blanc en réserve, des fleurs de jasmin, et une étiquette blanche à bord festonné qui porte le
-/// texte, avec même la ligne « Ingrédients » des boîtes.
+/// blanc en réserve, des fleurs de jasmin, et une étiquette blanche à bord festonné qui ne porte
+/// qu'une phrase, en arabe tunisien, et les deux boutons.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -58,7 +58,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                 children: [
                   const SafeArea(bottom: false, child: _TopBar()),
                   const Expanded(child: _Hero()),
-                  _Label(intro: _intro, compact: MediaQuery.of(context).size.height < 720),
+                  _Label(intro: _intro),
                 ],
               ),
             ),
@@ -352,10 +352,7 @@ class _ScallopClipper extends CustomClipper<Path> {
 
 class _Label extends StatelessWidget {
   final Animation<double> intro;
-
-  /// Petit écran : on garde l'essentiel pour laisser de la place à l'enseigne.
-  final bool compact;
-  const _Label({required this.intro, required this.compact});
+  const _Label({required this.intro});
 
   @override
   Widget build(BuildContext context) {
@@ -373,28 +370,28 @@ class _Label extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(24, compact ? 28 : 34, 24, 10),
+              padding: const EdgeInsets.fromLTRB(24, 30, 24, 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Une seule phrase, en arabe tunisien : « rencontres et sorties »
                   Semantics(
                     header: true,
-                    child: Text('Ahla bik', style: AppTextStyles.headlineXl.copyWith(color: AppColors.primary)),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Rencontrez des gens près de chez vous et sortez ensemble, de Tunis à Djerba.',
-                    style: AppTextStyles.bodyLg.copyWith(color: AppColors.onSurface, height: 1.4),
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      'Ingrédients : des gens curieux, un café en terrasse, un coucher de soleil à Sidi Bou Saïd.',
-                      style: AppTextStyles.labelSm.copyWith(fontStyle: FontStyle.italic),
+                    label: 'Rencontres et sorties, en arabe tunisien',
+                    excludeSemantics: true,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: Text(
+                          'تعارف وخرجات',
+                          style: GoogleFonts.arefRuqaa(fontSize: 44, fontWeight: FontWeight.w700, color: AppColors.primary, height: 1.2),
+                        ),
+                      ),
                     ),
-                  ],
-                  SizedBox(height: compact ? 14 : 18),
+                  ),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () => context.go('/register'),
                     child: const Text('Créer un compte'),
@@ -407,10 +404,10 @@ class _Label extends StatelessWidget {
                       foregroundColor: AppColors.sidi,
                       elevation: 0,
                     ),
-                    child: const Text("J'ai déjà un compte"),
+                    child: const Text('Se connecter'),
                   ),
                   const SizedBox(height: 2),
-                  const Center(child: LegalLinks()),
+                  const Center(child: LegalLinks.short()),
                 ],
               ),
             ),
