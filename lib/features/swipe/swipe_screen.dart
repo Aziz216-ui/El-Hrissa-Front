@@ -11,6 +11,7 @@ import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/brand.dart';
 import '../../shared/widgets/network_photo.dart';
 import '../../shared/widgets/notification_bell.dart';
+import '../../shared/widgets/couple_art.dart';
 import '../../shared/widgets/state_views.dart';
 
 class SwipeScreen extends StatefulWidget {
@@ -265,6 +266,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
     if (_currentIndex >= _candidates.length) {
       return EmptyView(
         icon: Icons.explore_outlined,
+        art: const CoupleArt(),
         title: 'Plus de profils pour le moment',
         subtitle: 'Élargissez la distance ou la tranche d\'âge, ou revenez un peu plus tard.',
         actionLabel: 'Actualiser',

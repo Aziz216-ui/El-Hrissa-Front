@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import '../api/api_client.dart';
 import '../api/api_error.dart';
@@ -30,6 +30,7 @@ class ProfileService {
     String? displayName,
     String? bio,
     String? genderPreference,
+    bool? searchable,
     List<String>? interests,
   }) async {
     try {
@@ -37,6 +38,7 @@ class ProfileService {
         if (displayName != null) 'displayName': displayName,
         if (bio != null) 'bio': bio,
         if (genderPreference != null) 'genderPreference': genderPreference,
+        if (searchable != null) 'searchable': searchable,
         if (interests != null) 'interests': interests,
       });
       return ProfileResponse.fromJson(response.data);

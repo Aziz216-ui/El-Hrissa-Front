@@ -41,6 +41,9 @@ class EmptyView extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// Illustration à la place de l'icône (par exemple le couple).
+  final Widget? art;
+
   const EmptyView({
     super.key,
     required this.icon,
@@ -48,6 +51,7 @@ class EmptyView extends StatelessWidget {
     required this.subtitle,
     this.actionLabel,
     this.onAction,
+    this.art,
   });
 
   @override
@@ -58,7 +62,7 @@ class EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _IconBadge(icon: icon, color: AppColors.primary, tint: AppColors.pastelPink),
+            art ?? _IconBadge(icon: icon, color: AppColors.primary, tint: AppColors.pastelPink),
             const SizedBox(height: 20),
             Text(title, style: AppTextStyles.headlineMd, textAlign: TextAlign.center),
             const SizedBox(height: 8),

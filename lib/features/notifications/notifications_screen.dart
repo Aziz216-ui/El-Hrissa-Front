@@ -57,11 +57,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       } catch (_) {}
     }
     if (!mounted) return;
-    // NEW_MATCH / NEW_MESSAGE : les deux mènent à la liste des conversations
+    // NEW_MATCH / NEW_MESSAGE / NEW_REQUEST : tous mènent aux messages (les demandes y sont en haut)
     context.go('/chat');
   }
 
-  IconData _icon(String type) => type == 'NEW_MATCH' ? Icons.favorite : Icons.chat_bubble;
+  IconData _icon(String type) {
+    switch (type) {
+      case 'NEW_MATCH':
+        return Icons.favorite;
+      case 'NEW_REQUEST':
+        return Icons.person_add_alt_1;
+      default:
+        return Icons.chat_bubble;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -14,6 +14,7 @@ import 'features/home/home_screen.dart';
 import 'features/legal/legal_screen.dart';
 import 'features/moderation/moderation_screen.dart';
 import 'features/notifications/notifications_screen.dart';
+import 'features/people/people_search_screen.dart';
 import 'features/profile/blocked_users_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/profile/profile_screen.dart';
@@ -86,6 +87,7 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/profile/edit', builder: (context, state) => const EditProfileScreen()),
     GoRoute(path: '/blocked', builder: (context, state) => const BlockedUsersScreen()),
     GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+    GoRoute(path: '/search-people', builder: (context, state) => const PeopleSearchScreen()),
     GoRoute(path: '/moderation', builder: (context, state) => const ModerationScreen()),
   ],
   errorBuilder: (context, state) => const Scaffold(

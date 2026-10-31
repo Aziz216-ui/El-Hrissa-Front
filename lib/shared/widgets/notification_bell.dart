@@ -6,7 +6,9 @@ import '../../core/theme/app_text_styles.dart';
 
 /// Cloche avec compteur de notifications non lues ; ouvre /notifications.
 class NotificationBell extends StatefulWidget {
-  const NotificationBell({super.key});
+  /// Sur la bande rouge : icône blanche et pastille blanche.
+  final bool onBand;
+  const NotificationBell({super.key, this.onBand = false});
 
   @override
   State<NotificationBell> createState() => _NotificationBellState();
@@ -29,29 +31,43 @@ class _NotificationBellState extends State<NotificationBell> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        await context.push('/notifications');
-        _refresh();
-      },
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(Icons.notifications_outlined, color: AppColors.onSurface, size: 26),
-          if (_unread > 0)
-            Positioned(
-              right: -4,
-              top: -4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(999)),
-                child: Text(
-                  _unread > 99 ? '99+' : '$_unread',
-                  style: AppTextStyles.labelSm.copyWith(color: AppColors.white, fontSize: 10),
+    final iconColor = widget.onBand ? AppColors.white : AppColors.onSurface;
+    final badgeColor = widget.onBand ? AppColors.white : AppColors.primary;
+    final badgeText = widget.onBand ? AppColors.primary : AppColors.white;
+    return Semantics(
+      button: true,
+      label: _unread > 0 ? 'Notifications, $_unread non lues' : 'Notifications',
+      excludeSemantics: true,
+      child: InkResponse(
+        onTap: () async {
+          await context.push('/notifications');
+          _refresh();
+        },
+        radius: 26,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              Icon(Icons.notifications_outlined, color: iconColor, size: 26),
+              if (_unread > 0)
+                Positioned(
+                  right: 4,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(999)),
+                    child: Text(
+                      _unread > 99 ? '99+' : '$_unread',
+                      style: AppTextStyles.labelSm.copyWith(color: badgeText, fontSize: 10),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

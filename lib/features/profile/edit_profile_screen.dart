@@ -24,6 +24,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<PhotoResponse> _photos = [];
   List<String> _interests = [];
   String _genderPreference = 'EVERYONE';
+  bool _searchable = true;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isUploading = false;
@@ -57,6 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _nameController.text = p.displayName ?? '';
         _bioController.text = p.bio ?? '';
         _genderPreference = p.genderPreference ?? 'EVERYONE';
+        _searchable = p.searchable;
       });
     } catch (e) {
       if (mounted) setState(() => _error = cleanError(e));
@@ -143,6 +145,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         displayName: _nameController.text.trim(),
         bio: _bioController.text.trim(),
         genderPreference: _genderPreference,
+        searchable: _searchable,
         interests: _interests,
       );
       if (mounted) {
@@ -214,7 +217,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 selectedForegroundColor: AppColors.primaryDark,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _searchable,
+              onChanged: (v) => setState(() => _searchable = v),
+              activeThumbColor: AppColors.primary,
+              title: const Text('Me trouver par mon nom'),
+              subtitle: const Text('Les personnes qui vous connaissent peuvent vous envoyer une demande.'),
+            ),
+            const SizedBox(height: 12),
             Text('Centres d\'intérêt', style: AppTextStyles.labelMd),
             const SizedBox(height: 8),
             Row(

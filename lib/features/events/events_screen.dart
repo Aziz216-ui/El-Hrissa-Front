@@ -11,7 +11,9 @@ import '../../shared/utils/link_opener.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/brand.dart';
 import '../../shared/widgets/network_photo.dart';
+import '../../shared/widgets/notification_bell.dart';
 import '../../shared/widgets/state_views.dart';
+import '../../shared/widgets/tab_band.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -254,10 +256,13 @@ class _EventsScreenState extends State<EventsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Text('Événements', style: AppTextStyles.headlineLgMobile),
+            // « Khrejet » : les sorties
+            const TabBand(
+              arabic: '\u062e\u0631\u062c\u0627\u062a',
+              title: 'Événements',
+              actions: [NotificationBell(onBand: true)],
             ),
+            const SizedBox(height: 12),
             _buildFilterBar(),
             Expanded(child: _buildBody()),
           ],

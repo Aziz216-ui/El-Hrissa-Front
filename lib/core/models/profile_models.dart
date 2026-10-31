@@ -76,6 +76,7 @@ class ProfileResponse {
   final double? longitude;
   final bool complete;
   final bool emailVerified;
+  final bool searchable;
   final String? verificationStatus;
   final List<PhotoResponse> photos;
   final List<String> interests;
@@ -92,6 +93,7 @@ class ProfileResponse {
     this.longitude,
     this.complete = false,
     this.emailVerified = false,
+    this.searchable = true,
     this.verificationStatus,
     required this.photos,
     required this.interests,
@@ -110,6 +112,7 @@ class ProfileResponse {
       longitude: (json['longitude'] as num?)?.toDouble(),
       complete: json['complete'] ?? false,
       emailVerified: json['emailVerified'] ?? false,
+      searchable: json['searchable'] ?? true,
       verificationStatus: json['verificationStatus'],
       photos: _parsePhotos(json['photos']),
       interests: _parseInterests(json['interests']),

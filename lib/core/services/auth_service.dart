@@ -76,9 +76,15 @@ class AuthService {
       await _googleSignIn.signOut(); // force le choix du compte
       final account = await _googleSignIn.signIn();
       if (account == null) return null;
-      final idToken = (await account.authentication).idToken;
-      if (idToken == null) throw Exception("Google n'a pas fourni de jeton d'identité");
-      final response = await _api.dio.post(Endpoints.google, data: {'idToken': idToken});
+      final auth = await account.authentication;
+      // Mobile : idToken. Web : Google ne le renvoie pas, le backend vérifie alors le jeton d'accès.
+      if (auth.idToken == null && auth.accessToken == null) {
+        throw Exception("Google n'a fourni aucun jeton");
+      }
+      final response = await _api.dio.post(
+        Endpoints.google,
+        data: {'idToken': auth.idToken, 'accessToken': auth.accessToken},
+      );
       return await _startSession(AuthResponse.fromJson(response.data));
     } on DioException catch (e) {
       throw Exception(apiErrorMessage(e, 'Connexion Google impossible'));

@@ -14,6 +14,7 @@ import '../../shared/widgets/brand.dart';
 import '../../shared/widgets/network_photo.dart';
 import '../../shared/widgets/notification_bell.dart';
 import '../../shared/widgets/state_views.dart';
+import '../../shared/widgets/tab_band.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -76,13 +77,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(child: _buildBody()),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildTopBar(),
+          Expanded(child: _buildBody()),
+        ],
       ),
       bottomNavigationBar: const ElBottomNav(currentIndex: 0),
     );
@@ -112,15 +111,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTopBar() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 4, 8, 4),
-      child: Row(
-        children: [
-          Wordmark(),
-          Spacer(),
-          NotificationBell(),
-        ],
-      ),
+    // « Ed-dar » : la maison
+    return const TabBand(
+      arabic: '\u0627\u0644\u062f\u0627\u0631',
+      title: 'Accueil',
+      actions: [NotificationBell(onBand: true)],
     );
   }
 

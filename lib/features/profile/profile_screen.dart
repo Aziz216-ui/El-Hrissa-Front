@@ -12,7 +12,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../shared/utils/location_helper.dart';
 import '../../shared/widgets/bottom_nav.dart';
 import '../../shared/widgets/network_photo.dart';
+import '../../shared/widgets/notification_bell.dart';
 import '../../shared/widgets/state_views.dart';
+import '../../shared/widgets/tab_band.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -197,8 +199,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: _isLoading
+      body: Column(
+        children: [
+          // « Ena » : moi
+          const TabBand(
+            arabic: 'أنا',
+            title: 'Mon profil',
+            actions: [NotificationBell(onBand: true)],
+          ),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
             : _error != null
                 ? ErrorView(message: _error!, onRetry: _load)
@@ -218,6 +230,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: const ElBottomNav(currentIndex: 4),
     );
