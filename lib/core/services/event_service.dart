@@ -8,11 +8,34 @@ import '../models/profile_models.dart';
 class EventService {
   final ApiClient _api = ApiClient();
 
-  Future<List<EventResponse>> getEvents({bool upcomingOnly = true, int page = 0, int size = 50}) async {
+  /// Villes et types des événements à venir. Un serveur plus ancien n'a pas cette route :
+  /// on renvoie alors des filtres vides, et l'écran les masque.
+  Future<EventFilters> getFilters() async {
+    try {
+      final response = await _api.dio.get('/api/events/filters');
+      return EventFilters.fromJson(response.data as Map<String, dynamic>);
+    } on DioException {
+      return const EventFilters();
+    }
+  }
+
+  Future<List<EventResponse>> getEvents({
+    bool upcomingOnly = true,
+    int page = 0,
+    int size = 50,
+    String? city,
+    String? category,
+  }) async {
     try {
       final response = await _api.dio.get(
         Endpoints.events,
-        queryParameters: {'upcomingOnly': upcomingOnly, 'page': page, 'size': size},
+        queryParameters: {
+          'upcomingOnly': upcomingOnly,
+          'page': page,
+          'size': size,
+          if (city != null && city.isNotEmpty) 'city': city,
+          if (category != null && category.isNotEmpty) 'category': category,
+        },
       );
       final List<dynamic> content = response.data['content'] ?? [];
       return content.map((e) => EventResponse.fromJson(e)).toList();
@@ -60,12 +83,16 @@ class EventService {
     required String name,
     String? description,
     String? venueName,
+    String? city,
+    String? category,
     required DateTime startsAt,
     DateTime? endsAt,
   }) async {
     try {
       final response = await _api.dio.post(Endpoints.events, data: {
         'name': name,
+        if (city != null && city.isNotEmpty) 'city': city,
+        if (category != null && category.isNotEmpty) 'category': category,
         if (description != null && description.isNotEmpty) 'description': description,
         if (venueName != null && venueName.isNotEmpty) 'venueName': venueName,
         'startsAt': startsAt.toUtc().toIso8601String(),

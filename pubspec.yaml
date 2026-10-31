@@ -15,6 +15,7 @@ dependencies:
 
   # UI & Design
   google_fonts: ^6.2.1
+  url_launcher: ^6.3.3
   cupertino_icons: ^1.0.8
 
   # Images
