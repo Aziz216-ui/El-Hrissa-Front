@@ -7,9 +7,12 @@ import '../../core/theme/app_text_styles.dart';
 import '../legal/legal_screen.dart';
 
 /// Écran d'accueil avant la connexion.
-/// Un mur harissa à motif de zellige (étoiles khatem), et au centre la porte bleue de Sidi Bou Saïd,
-/// cloutée de laiton, qui s'entrouvre une seule fois à l'arrivée. Un jasmin, le porte-bonheur
-/// que l'on offre en Tunisie, orne l'arche.
+///
+/// L'idée : l'app s'appelle Elahrisa, comme la harissa, et la boîte de harissa est l'objet que
+/// chaque table tunisienne connaît. L'écran est son étiquette : un fond rouge imprimé de
+/// carreaux étoilés (khatem), « أهلا بيك » peint en grand comme une enseigne de souk, un piment
+/// blanc en réserve, des fleurs de jasmin, et une étiquette blanche à bord festonné qui porte le
+/// texte, avec même la ligne « Ingrédients » des boîtes.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -18,7 +21,7 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _door = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+  late final AnimationController _intro = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
   bool _started = false;
 
   @override
@@ -27,34 +30,66 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     if (_started) return;
     _started = true;
     if (MediaQuery.of(context).disableAnimations) {
-      _door.value = 1;
+      _intro.value = 1;
     } else {
-      Future.delayed(const Duration(milliseconds: 350), () {
-        if (mounted) _door.forward();
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) _intro.forward();
       });
     }
   }
 
   @override
   void dispose() {
-    _door.dispose();
+    _intro.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
-            children: [
-              Expanded(child: _Hero(door: _door)),
-              const _Sheet(),
-            ],
+      backgroundColor: AppColors.primary,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: ExcludeSemantics(child: CustomPaint(painter: _TileWallPainter()))),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                children: [
+                  const SafeArea(bottom: false, child: _TopBar()),
+                  const Expanded(child: _Hero()),
+                  _Label(intro: _intro, compact: MediaQuery.of(context).size.height < 720),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------------ Haut
+
+class _TopBar extends StatelessWidget {
+  const _TopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+      child: Row(
+        children: [
+          Semantics(
+            label: 'Elahrisa',
+            excludeSemantics: true,
+            child: Text('Elahrisa', style: AppTextStyles.headlineMd.copyWith(color: AppColors.white, fontStyle: FontStyle.italic)),
+          ),
+          const SizedBox(width: 8),
+          const ExcludeSemantics(
+            child: CustomPaint(size: Size(18, 24), painter: _ChiliPainter(body: AppColors.white, shade: AppColors.white, cap: AppColors.saffron)),
+          ),
+        ],
       ),
     );
   }
@@ -63,85 +98,97 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 // ------------------------------------------------------------------------ Décor
 
 class _Hero extends StatelessWidget {
-  final Animation<double> door;
-  const _Hero({required this.door});
+  const _Hero();
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      image: true,
-      label: 'Illustration : une porte bleue tunisienne aux clous dorés, ornée de jasmin',
-      child: ExcludeSemantics(
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, 0.35),
-              radius: 1.05,
-              colors: [AppColors.primaryContainer, AppColors.primary, AppColors.primaryDark],
-              stops: [0.0, 0.55, 1.0],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(child: CustomPaint(painter: _ZelligePainter())),
-              SafeArea(
-                bottom: false,
+    return LayoutBuilder(
+      builder: (context, box) {
+        final chiliHeight = math.min(box.maxHeight * 0.6, 190.0);
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // L'enseigne : « Bienvenue » peint en grand, un peu de travers comme à la main
+            Align(
+              alignment: const Alignment(0, -0.3),
+              child: Transform.rotate(
+                angle: -0.05,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Elahrisa 🌶️',
-                      style: AppTextStyles.headlineMd.copyWith(color: AppColors.white, fontStyle: FontStyle.italic),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Semantics(
+                    label: 'Ahla bik, bienvenue en arabe tunisien',
+                    excludeSemantics: true,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              'أهلا بيك',
+                              style: GoogleFonts.lalezar(fontSize: 112, color: AppColors.white, height: 1.15),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const CustomPaint(size: Size(250, 18), painter: _BrushStrokePainter()),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: LayoutBuilder(
-                  builder: (context, box) {
-                    final doorWidth = math.min(box.maxWidth * 0.6, (box.maxHeight - 72) / 1.5);
-                    if (doorWidth < 60) return const SizedBox.shrink();
-                    return Align(
-                      alignment: Alignment.bottomCenter,
-                      child: CustomPaint(
-                        size: Size(doorWidth, doorWidth * 1.5),
-                        painter: _DoorPainter(door),
-                      ),
-                    );
-                  },
+            ),
+            // Piment en réserve, à droite
+            Positioned(
+              right: 20,
+              bottom: 2,
+              child: ExcludeSemantics(
+                child: Transform.rotate(
+                  angle: 0.2,
+                  child: CustomPaint(
+                    size: Size(chiliHeight * 0.78, chiliHeight),
+                    painter: const _ChiliPainter(body: AppColors.white, shade: Color(0xFFF2D4D1), cap: AppColors.saffron),
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
+            // Jasmin, à gauche
+            const Positioned(
+              left: 12,
+              bottom: 4,
+              child: ExcludeSemantics(
+                child: CustomPaint(size: Size(150, 96), painter: _JasminePainter()),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
-/// Étoiles à huit branches (khatem) de la mosaïque, ton sur ton.
-class _ZelligePainter extends CustomPainter {
+/// Carreaux étoilés à huit branches (khatem), pleins, ton sur ton.
+class _TileWallPainter extends CustomPainter {
+  const _TileWallPainter();
+
   @override
   void paint(Canvas canvas, Size size) {
-    const cell = 58.0;
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1
-      ..color = AppColors.white.withAlpha(30);
-    final dot = Paint()..color = AppColors.white.withAlpha(22);
-    const side = cell * 0.6;
-    for (var row = 0; row * cell < size.height + cell; row++) {
-      for (var col = 0; col * cell < size.width + cell; col++) {
-        final c = Offset(col * cell + (row.isOdd ? cell / 2 : 0), row * cell * 0.86);
-        for (final angle in const [0.0, math.pi / 4]) {
-          canvas.save();
-          canvas.translate(c.dx, c.dy);
-          canvas.rotate(angle);
-          canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: side, height: side), line);
-          canvas.restore();
+    const spacing = 58.0;
+    const outer = 25.0;
+    const inner = outer * 0.7;
+    final paint = Paint()..color = const Color(0xFF9F1019);
+    var row = 0;
+    for (var y = 0.0; y < size.height + spacing; y += spacing * 0.9, row++) {
+      for (var x = row.isOdd ? spacing / 2 : 0.0; x < size.width + spacing; x += spacing) {
+        final path = Path();
+        for (var i = 0; i < 16; i++) {
+          final a = i * math.pi / 8 - math.pi / 2;
+          final r = i.isEven ? outer : inner;
+          final p = Offset(x + r * math.cos(a), y + r * math.sin(a));
+          i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
         }
-        canvas.drawCircle(c, 2.2, dot);
+        canvas.drawPath(path..close(), paint);
       }
     }
   }
@@ -150,253 +197,223 @@ class _ZelligePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Porte en arc outrepassé : cadre blanc chaux, deux vantaux bleu Sidi Bou clous laiton, jasmin.
-class _DoorPainter extends CustomPainter {
-  final Animation<double> progress;
-  _DoorPainter(this.progress) : super(repaint: progress);
-
-  static const _brass = AppColors.saffron;
-  static const _leafGreen = Color(0xFF2F7D52);
-
-  /// Arc outrepassé : un peu plus qu'un demi-cercle, resserré au pied.
-  Path _arch(double width, double height, double inset) {
-    final w = width - 2 * inset;
-    final r = w / 2 * 1.07;
-    final a = math.acos((w / 2) / r);
-    final cx = width / 2;
-    final cy = inset + r;
-    return Path()
-      ..moveTo(cx - w / 2, height)
-      ..lineTo(cx - w / 2, cy + r * math.sin(a))
-      ..arcTo(Rect.fromCircle(center: Offset(cx, cy), radius: r), math.pi - a, math.pi + 2 * a, false)
-      ..lineTo(cx + w / 2, height)
-      ..close();
-  }
+/// Coup de pinceau safran sous l'enseigne.
+class _BrushStrokePainter extends CustomPainter {
+  const _BrushStrokePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final t = Curves.easeInOutCubic.transform(progress.value.clamp(0.0, 1.0));
     final w = size.width;
     final h = size.height;
-    final frame = w * 0.07;
-
-    final outer = _arch(w, h, 0);
-    final inner = _arch(w, h, frame);
-
-    canvas.drawShadow(outer, const Color(0xFF3A0508), 14, true);
-    canvas.drawPath(outer, Paint()..color = AppColors.surfaceWhite);
-
-    // Lumière chaude derrière les vantaux
+    final path = Path()
+      ..moveTo(w * 0.02, h * 0.55)
+      ..cubicTo(w * 0.2, h * 0.05, w * 0.34, h * 0.95, w * 0.52, h * 0.45)
+      ..cubicTo(w * 0.66, h * 0.05, w * 0.82, h * 0.85, w * 0.98, h * 0.35);
     canvas.drawPath(
-      inner,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFF1CC), AppColors.saffron],
-        ).createShader(Offset.zero & size),
-    );
-
-    // Vantaux
-    canvas.save();
-    canvas.clipPath(inner);
-    final innerWidth = w - 2 * frame;
-    final leafWidth = innerWidth / 2;
-    final scaleX = 1 - 0.46 * t;
-    for (final side in const [-1, 1]) {
-      canvas.save();
-      canvas.translate(w / 2 + side * innerWidth / 2, 0);
-      canvas.scale(-side * scaleX, 1);
-      _paintLeaf(canvas, leafWidth, h, t);
-      canvas.restore();
-    }
-    canvas.restore();
-
-    // Filet laiton le long de l'arche
-    canvas.drawPath(
-      inner,
+      path,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = math.max(1.5, w * 0.012)
-        ..color = _brass,
-    );
-
-    _paintJasmine(canvas, size);
-  }
-
-  /// Un vantail dessiné de la charnière (x = 0) vers le centre (x > 0).
-  void _paintLeaf(Canvas canvas, double lw, double h, double t) {
-    final rect = Rect.fromLTWH(0, 0, lw, h);
-    canvas.drawRect(rect, Paint()..color = AppColors.sidi);
-
-    // Planches
-    final plank = Paint()
-      ..color = const Color(0xFF123677).withAlpha(120)
-      ..strokeWidth = 1.2;
-    for (var i = 1; i < 3; i++) {
-      canvas.drawLine(Offset(lw * i / 3, 0), Offset(lw * i / 3, h), plank);
-    }
-
-    // Clous en quinconce
-    final step = lw / 4.2;
-    final stud = Paint()..color = _brass;
-    final glint = Paint()..color = const Color(0xFFFFE6A8);
-    final r = step * 0.2;
-    var row = 0;
-    for (var y = step * 0.9; y < h; y += step * 0.82, row++) {
-      for (var x = step * 0.5 + (row.isOdd ? step / 2 : 0); x < lw - step * 0.2; x += step) {
-        canvas.drawCircle(Offset(x, y), r, stud);
-        canvas.drawCircle(Offset(x - r * 0.3, y - r * 0.3), r * 0.38, glint);
-      }
-    }
-
-    // Anneau de la porte, qui s'efface quand elle s'ouvre
-    final ringCenter = Offset(lw - lw * 0.22, h * 0.6);
-    final ringAlpha = ((1 - t) * 255).round();
-    if (ringAlpha > 0) {
-      canvas.drawCircle(
-        ringCenter,
-        lw * 0.17,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = lw * 0.045
-          ..color = _brass.withAlpha(ringAlpha),
-      );
-    }
-
-    // Ombre côté charnière, plus marquée quand le vantail s'ouvre
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          colors: [const Color(0xFF0A1F44).withAlpha((70 + 90 * t).round()), Colors.transparent],
-          stops: const [0.0, 0.7],
-        ).createShader(rect),
-    );
-  }
-
-  void _paintJasmine(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // Liane qui retombe à droite de l'arche
-    final vine = Path()
-      ..moveTo(w * 0.93, h * 0.2)
-      ..cubicTo(w * 1.04, h * 0.3, w * 0.98, h * 0.42, w * 1.03, h * 0.55);
-    canvas.drawPath(
-      vine,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = w * 0.014
         ..strokeCap = StrokeCap.round
-        ..color = _leafGreen,
+        ..strokeWidth = 7
+        ..color = AppColors.saffron,
     );
-    final leaf = Paint()..color = _leafGreen;
-    for (final p in [Offset(w * 1.0, h * 0.32), Offset(w * 0.99, h * 0.44), Offset(w * 1.03, h * 0.5)]) {
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Un piment, courbe et pointe vers le bas.
+class _ChiliPainter extends CustomPainter {
+  final Color body;
+  final Color shade;
+  final Color cap;
+  const _ChiliPainter({required this.body, required this.shade, required this.cap});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final bodyPath = Path()
+      ..moveTo(w * 0.5, h * 0.17)
+      ..cubicTo(w * 0.62, h * 0.1, w * 0.8, h * 0.12, w * 0.85, h * 0.27)
+      ..cubicTo(w * 0.94, h * 0.56, w * 0.62, h * 0.86, w * 0.2, h * 0.98)
+      ..cubicTo(w * 0.52, h * 0.72, w * 0.4, h * 0.55, w * 0.4, h * 0.34)
+      ..cubicTo(w * 0.4, h * 0.25, w * 0.44, h * 0.2, w * 0.5, h * 0.17)
+      ..close();
+    canvas.drawPath(bodyPath, Paint()..color = body);
+
+    // Reflet : une zone pleine, coupée par la forme du piment
+    if (shade != body) {
       canvas.save();
-      canvas.translate(p.dx, p.dy);
-      canvas.rotate(-0.6);
-      canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: w * 0.07, height: w * 0.032), leaf);
+      canvas.clipPath(bodyPath);
+      canvas.drawCircle(Offset(w * 0.22, h * 0.5), w * 0.3, Paint()..color = shade);
       canvas.restore();
     }
 
-    final r = w * 0.058;
-    for (final f in [
-      Offset(w * 0.5, w * 0.015),
-      Offset(w * 0.5 - w * 0.17, w * 0.085),
-      Offset(w * 0.5 + w * 0.17, w * 0.085),
-      Offset(w * 0.96, h * 0.24),
-      Offset(w * 1.01, h * 0.38),
-      Offset(w * 1.04, h * 0.54),
-    ]) {
-      _flower(canvas, f, r);
-    }
+    // Tige et chapeau
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.62, h * 0.13)
+        ..quadraticBezierTo(w * 0.64, h * 0.04, w * 0.8, h * 0.0),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = w * 0.09
+        ..color = cap,
+    );
+    canvas.save();
+    canvas.translate(w * 0.64, h * 0.15);
+    canvas.rotate(-0.12);
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: w * 0.5, height: h * 0.085), Paint()..color = cap);
+    canvas.restore();
   }
 
-  /// Fleur de jasmin : cinq pétales blancs, cœur safran.
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Une branche de jasmin : trois fleurs blanches à cœur safran et quelques feuilles.
+class _JasminePainter extends CustomPainter {
+  const _JasminePainter();
+
+  static const _leaf = Color(0xFF2F7D52);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.04, h * 0.98)
+        ..cubicTo(w * 0.3, h * 0.78, w * 0.5, h * 0.55, w * 0.9, h * 0.2),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 3
+        ..color = _leaf,
+    );
+    final leaf = Paint()..color = _leaf;
+    for (final l in const [
+      [0.2, 0.86, -0.9],
+      [0.42, 0.7, 0.5],
+      [0.62, 0.45, -0.8],
+      [0.78, 0.32, 0.6],
+    ]) {
+      canvas.save();
+      canvas.translate(w * l[0], h * l[1]);
+      canvas.rotate(l[2]);
+      canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.04, 0), width: w * 0.15, height: w * 0.06), leaf);
+      canvas.restore();
+    }
+    _flower(canvas, Offset(w * 0.9, h * 0.2), w * 0.095);
+    _flower(canvas, Offset(w * 0.56, h * 0.5), w * 0.085);
+    _flower(canvas, Offset(w * 0.3, h * 0.74), w * 0.075);
+  }
+
   void _flower(Canvas canvas, Offset c, double r) {
-    final petal = Paint()..color = AppColors.white;
-    final edge = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
-      ..color = const Color(0xFFE5D9C3);
     for (var i = 0; i < 5; i++) {
       canvas.save();
       canvas.translate(c.dx, c.dy);
       canvas.rotate(i * 2 * math.pi / 5 - math.pi / 2);
-      final rect = Rect.fromCenter(center: Offset(r * 0.55, 0), width: r * 1.1, height: r * 0.62);
-      canvas.drawOval(rect, petal);
-      canvas.drawOval(rect, edge);
+      canvas.drawOval(Rect.fromCenter(center: Offset(r * 0.55, 0), width: r * 1.15, height: r * 0.7), Paint()..color = AppColors.white);
       canvas.restore();
     }
-    canvas.drawCircle(c, r * 0.2, Paint()..color = _brass);
+    canvas.drawCircle(c, r * 0.22, Paint()..color = AppColors.saffron);
   }
 
   @override
-  bool shouldRepaint(covariant _DoorPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ------------------------------------------------------------------------ Feuille
+// ------------------------------------------------------------------------ Étiquette
 
-class _Sheet extends StatelessWidget {
-  const _Sheet();
+/// Bord supérieur en festons, comme le papier d'une étiquette ou une dentelle de zellige.
+class _ScallopClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final bumps = math.max(6, (size.width / 30).round());
+    final r = size.width / (bumps * 2);
+    final path = Path()..moveTo(0, r);
+    for (var i = 0; i < bumps; i++) {
+      path.arcToPoint(Offset((i + 1) * 2 * r, r), radius: Radius.circular(r), clockwise: true);
+    }
+    return path
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+class _Label extends StatelessWidget {
+  final Animation<double> intro;
+
+  /// Petit écran : on garde l'essentiel pour laisser de la place à l'enseigne.
+  final bool compact;
+  const _Label({required this.intro, required this.compact});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.end,
-                spacing: 14,
+    return AnimatedBuilder(
+      animation: intro,
+      builder: (context, child) {
+        final t = Curves.easeOutCubic.transform(intro.value);
+        return Transform.translate(offset: Offset(0, 36 * (1 - t)), child: child);
+      },
+      child: ClipPath(
+        clipper: _ScallopClipper(),
+        child: Container(
+          width: double.infinity,
+          color: AppColors.surfaceWhite,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24, compact ? 28 : 34, 24, 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Semantics(
                     header: true,
                     child: Text('Ahla bik', style: AppTextStyles.headlineXl.copyWith(color: AppColors.primary)),
                   ),
-                  // « Bienvenue » en arabe : lu de droite à gauche, sans dépendre d'une police système
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Directionality(
-                      textDirection: TextDirection.rtl,
-                      child: Text(
-                        'أهلا بيك',
-                        semanticsLabel: 'Bienvenue, en arabe tunisien',
-                        style: GoogleFonts.reemKufi(fontSize: 26, fontWeight: FontWeight.w600, color: AppColors.sidi),
-                      ),
-                    ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Rencontrez des gens près de chez vous et sortez ensemble, de Tunis à Djerba.',
+                    style: AppTextStyles.bodyLg.copyWith(color: AppColors.onSurface, height: 1.4),
                   ),
+                  if (!compact) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Ingrédients : des gens curieux, un café en terrasse, un coucher de soleil à Sidi Bou Saïd.',
+                      style: AppTextStyles.labelSm.copyWith(fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                  SizedBox(height: compact ? 14 : 18),
+                  ElevatedButton(
+                    onPressed: () => context.go('/register'),
+                    child: const Text('Créer un compte'),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () => context.go('/login'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.sidiTint,
+                      foregroundColor: AppColors.sidi,
+                      elevation: 0,
+                    ),
+                    child: const Text("J'ai déjà un compte"),
+                  ),
+                  const SizedBox(height: 2),
+                  const Center(child: LegalLinks()),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Rencontrez des gens près de chez vous et sortez ensemble, de Tunis à Djerba.',
-                style: AppTextStyles.bodyLg.copyWith(color: AppColors.onSurfaceVariant),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => context.go('/register'),
-                child: const Text('Créer un compte'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => context.go('/login'),
-                child: const Text("J'ai déjà un compte"),
-              ),
-              const SizedBox(height: 6),
-              const Center(child: LegalLinks()),
-            ],
+            ),
           ),
         ),
       ),
