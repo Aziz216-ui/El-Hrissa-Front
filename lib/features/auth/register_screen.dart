@@ -4,6 +4,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../legal/legal_screen.dart';
+import 'google_sign_in_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -258,6 +259,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         )
                       : const Text('Créer mon compte'),
                 ),
+                const SizedBox(height: 16),
+
+                GoogleSignInButton(onError: (m) => setState(() => _errorMessage = m)),
                 const SizedBox(height: 16),
 
                 // Lien vers Login

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import 'google_sign_in_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -199,6 +200,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : const Text('Se connecter'),
                   ),
+                  const SizedBox(height: 16),
+
+                  GoogleSignInButton(onError: (m) => setState(() => _errorMessage = m)),
                   const SizedBox(height: 16),
 
                   // Lien vers Inscription

@@ -1,4 +1,6 @@
 ﻿import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_sign_in/google_sign_in.dart';
 import '../api/api_client.dart';
 import '../api/api_error.dart';
 import '../api/endpoints.dart';
@@ -50,9 +52,53 @@ class AuthService {
     }
   }
 
+  /// Client ID OAuth « web » du projet Google Cloud (sert de serverClientId pour obtenir l'idToken) :
+  ///   flutter run --dart-define=GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+  static const String _googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+    // Client ID « Web » (public, ce n'est pas un secret) : l'idToken est émis pour cette audience
+    defaultValue: '145076283226-o8m3g27a5cia5durlfd2or6foh82fsbq.apps.googleusercontent.com',
+  );
+
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: const ['email', 'profile'],
+    clientId: kIsWeb && _googleClientId.isNotEmpty ? _googleClientId : null,
+    serverClientId: !kIsWeb && _googleClientId.isNotEmpty ? _googleClientId : null,
+  );
+
+  /// Ouvre le sélecteur de compte Google ; null si l'utilisateur annule.
+  /// Le backend vérifie le jeton, puis connecte ou crée le compte (nom, prénom et email viennent de Google).
+  Future<AuthResponse?> loginWithGoogle() async {
+    if (_googleClientId.isEmpty) {
+      throw Exception("Connexion Google non configurée (GOOGLE_CLIENT_ID manquant)");
+    }
+    try {
+      await _googleSignIn.signOut(); // force le choix du compte
+      final account = await _googleSignIn.signIn();
+      if (account == null) return null;
+      final idToken = (await account.authentication).idToken;
+      if (idToken == null) throw Exception("Google n'a pas fourni de jeton d'identité");
+      final response = await _api.dio.post(Endpoints.google, data: {'idToken': idToken});
+      return await _startSession(AuthResponse.fromJson(response.data));
+    } on DioException catch (e) {
+      throw Exception(apiErrorMessage(e, 'Connexion Google impossible'));
+    }
+  }
+
+  /// Genre et date de naissance (YYYY-MM-DD) d'un compte Google.
+  Future<void> completeIdentity({required String dateNaissance, required String gender}) async {
+    try {
+      await _api.dio.put(Endpoints.completeIdentity, data: {'dateNaissance': dateNaissance, 'gender': gender});
+      await AuthState.instance.setIdentityCompleted();
+    } on DioException catch (e) {
+      throw Exception(apiErrorMessage(e, "Impossible d'enregistrer vos informations"));
+    }
+  }
+
   Future<AuthResponse> _startSession(AuthResponse auth) async {
-    await _api.saveSession(auth.token, auth.user.id, auth.user.role);
-    AuthState.instance.setLoggedIn(role: auth.user.role);
+    final needsIdentity = auth.user.gender == null || auth.user.gender!.isEmpty;
+    await _api.saveSession(auth.token, auth.user.id, auth.user.role, needsIdentity: needsIdentity);
+    AuthState.instance.setLoggedIn(role: auth.user.role, needsIdentity: needsIdentity);
     return auth;
   }
 

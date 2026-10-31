@@ -12,6 +12,7 @@ class ApiClient {
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'user_id';
   static const String _roleKey = 'user_role';
+  static const String _needsIdentityKey = 'needs_identity';
 
   ApiClient._internal() {
     dio = Dio(
@@ -39,7 +40,8 @@ class ApiClient {
           // Token expiré ou invalide : on déconnecte (le routeur renvoie vers /login).
           // Un 401 sur /login signifie « mauvais mot de passe », pas une session expirée.
           final isAuthCall = error.requestOptions.path == Endpoints.login ||
-              error.requestOptions.path == Endpoints.register;
+              error.requestOptions.path == Endpoints.register ||
+              error.requestOptions.path == Endpoints.google;
           final unauthorized = error.response?.statusCode == 401 ||
               (error.response?.statusCode == 403 && await hasToken() && error.response?.data is! Map);
           if (unauthorized && !isAuthCall && await hasToken()) {
@@ -52,7 +54,8 @@ class ApiClient {
     );
   }
 
-  Future<void> saveSession(String token, int? userId, String? role) async {
+  Future<void> saveSession(String token, int? userId, String? role, {bool needsIdentity = false}) async {
+    await _storage.write(key: _needsIdentityKey, value: needsIdentity.toString());
     await _storage.write(key: _tokenKey, value: token);
     if (userId != null) await _storage.write(key: _userIdKey, value: userId.toString());
     if (role != null) await _storage.write(key: _roleKey, value: role);
@@ -64,6 +67,7 @@ class ApiClient {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userIdKey);
     await _storage.delete(key: _roleKey);
+    await _storage.delete(key: _needsIdentityKey);
   }
 
   Future<bool> hasToken() async {
@@ -77,4 +81,8 @@ class ApiClient {
   }
 
   Future<String?> getRole() => _storage.read(key: _roleKey);
+
+  Future<bool> getNeedsIdentity() async => (await _storage.read(key: _needsIdentityKey)) == 'true';
+
+  Future<void> setNeedsIdentity(bool value) => _storage.write(key: _needsIdentityKey, value: value.toString());
 }

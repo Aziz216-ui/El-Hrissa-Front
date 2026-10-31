@@ -23,6 +23,8 @@ class Endpoints {
   // Auth
   static const String login = '/api/auth/login';
   static const String register = '/api/auth/register';
+  static const String google = '/api/auth/google';
+  static const String completeIdentity = '/api/auth/me/identity';
   static const String resendVerification = '/api/auth/resend-verification';
   static const String forgotPassword = '/api/auth/forgot-password';
   static String user(int id) => '/api/users/$id';

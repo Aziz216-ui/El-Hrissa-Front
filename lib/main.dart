@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'core/auth/auth_state.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/complete_identity_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/register_screen.dart';
@@ -30,6 +31,8 @@ const _openRoutes = {'/terms', '/privacy'};
 
 const _publicRoutes = {'/welcome', '/login', '/register', '/forgot-password'};
 
+const _identityRoute = '/complete-identity';
+
 final GoRouter _router = GoRouter(
   initialLocation: '/home',
   refreshListenable: AuthState.instance,
@@ -38,6 +41,10 @@ final GoRouter _router = GoRouter(
     final path = state.matchedLocation;
     if (_openRoutes.contains(path)) return null;
     final isPublic = _publicRoutes.contains(path);
+
+    // Compte Google sans genre ni date de naissance : étape obligatoire avant l'app
+    if (loggedIn && AuthState.instance.needsIdentity) return path == _identityRoute ? null : _identityRoute;
+    if (path == _identityRoute) return loggedIn ? '/home' : '/welcome';
 
     if (!loggedIn && !isPublic) return '/welcome';
     if (loggedIn && isPublic) return '/home';
@@ -49,6 +56,7 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/privacy', builder: (context, state) => const LegalScreen.privacy()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
+    GoRoute(path: _identityRoute, builder: (context, state) => const CompleteIdentityScreen()),
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => ForgotPasswordScreen(initialEmail: state.extra is String ? state.extra as String : ''),
