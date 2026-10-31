@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../legal/legal_screen.dart';
+import 'welcome_characters.dart';
 
 /// Écran d'accueil avant la connexion.
 ///
@@ -20,8 +21,11 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
+class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateMixin {
   late final AnimationController _intro = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+  // Boucle lente : respiration, clignement des yeux, coeurs qui montent
+  late final AnimationController _loop = AnimationController(vsync: this, duration: const Duration(seconds: 5));
+  bool _animate = false;
   bool _started = false;
 
   @override
@@ -31,7 +35,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     _started = true;
     if (MediaQuery.of(context).disableAnimations) {
       _intro.value = 1;
+      _loop.value = 0.3;
     } else {
+      _animate = true;
+      _loop.repeat();
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) _intro.forward();
       });
@@ -41,6 +48,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   @override
   void dispose() {
     _intro.dispose();
+    _loop.dispose();
     super.dispose();
   }
 
@@ -57,7 +65,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               child: Column(
                 children: [
                   const SafeArea(bottom: false, child: _TopBar()),
-                  const Expanded(child: _Hero()),
+                  Expanded(child: _Hero(loop: _loop, animate: _animate)),
                   _Label(intro: _intro),
                 ],
               ),
@@ -98,19 +106,21 @@ class _TopBar extends StatelessWidget {
 // ------------------------------------------------------------------------ Décor
 
 class _Hero extends StatelessWidget {
-  const _Hero();
+  final Animation<double> loop;
+  final bool animate;
+  const _Hero({required this.loop, required this.animate});
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, box) {
-        final chiliHeight = math.min(box.maxHeight * 0.6, 190.0);
+        final person = math.min(box.maxWidth * 0.43, 175.0);
         return Stack(
           clipBehavior: Clip.none,
           children: [
             // L'enseigne : « Bienvenue » peint en grand, un peu de travers comme à la main
             Align(
-              alignment: const Alignment(0, -0.3),
+              alignment: const Alignment(0, -0.45),
               child: Transform.rotate(
                 angle: -0.05,
                 child: Padding(
@@ -126,7 +136,7 @@ class _Hero extends StatelessWidget {
                           Directionality(
                             textDirection: TextDirection.rtl,
                             child: Text(
-                              'أهلا بيك',
+                              '\u0623\u0647\u0644\u0627 \u0628\u064a\u0643',
                               style: GoogleFonts.lalezar(fontSize: 112, color: AppColors.white, height: 1.15),
                             ),
                           ),
@@ -139,26 +149,27 @@ class _Hero extends StatelessWidget {
                 ),
               ),
             ),
-            // Piment en réserve, à droite
+            // Des coeurs montent entre les deux, tant que les animations sont permises
+            if (animate) Positioned.fill(child: ExcludeSemantics(child: CustomPaint(painter: HeartsPainter(loop)))),
+            // Lui et elle, en autocollants, qui depassent derriere l'etiquette
             Positioned(
-              right: 20,
-              bottom: 2,
+              left: box.maxWidth * 0.05,
+              bottom: -person * 0.1,
               child: ExcludeSemantics(
                 child: Transform.rotate(
-                  angle: 0.2,
-                  child: CustomPaint(
-                    size: Size(chiliHeight * 0.78, chiliHeight),
-                    painter: const _ChiliPainter(body: AppColors.white, shade: Color(0xFFF2D4D1), cap: AppColors.saffron),
-                  ),
+                  angle: 0.07,
+                  child: CustomPaint(size: Size(person, person * 1.25), painter: PersonPainter(loop, man: true)),
                 ),
               ),
             ),
-            // Jasmin, à gauche
-            const Positioned(
-              left: 12,
-              bottom: 4,
+            Positioned(
+              right: box.maxWidth * 0.05,
+              bottom: -person * 0.1,
               child: ExcludeSemantics(
-                child: CustomPaint(size: Size(150, 96), painter: _JasminePainter()),
+                child: Transform.rotate(
+                  angle: -0.07,
+                  child: CustomPaint(size: Size(person, person * 1.25), painter: PersonPainter(loop, man: false)),
+                ),
               ),
             ),
           ],
@@ -268,60 +279,6 @@ class _ChiliPainter extends CustomPainter {
     canvas.rotate(-0.12);
     canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: w * 0.5, height: h * 0.085), Paint()..color = cap);
     canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Une branche de jasmin : trois fleurs blanches à cœur safran et quelques feuilles.
-class _JasminePainter extends CustomPainter {
-  const _JasminePainter();
-
-  static const _leaf = Color(0xFF2F7D52);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(w * 0.04, h * 0.98)
-        ..cubicTo(w * 0.3, h * 0.78, w * 0.5, h * 0.55, w * 0.9, h * 0.2),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = 3
-        ..color = _leaf,
-    );
-    final leaf = Paint()..color = _leaf;
-    for (final l in const [
-      [0.2, 0.86, -0.9],
-      [0.42, 0.7, 0.5],
-      [0.62, 0.45, -0.8],
-      [0.78, 0.32, 0.6],
-    ]) {
-      canvas.save();
-      canvas.translate(w * l[0], h * l[1]);
-      canvas.rotate(l[2]);
-      canvas.drawOval(Rect.fromCenter(center: Offset(w * 0.04, 0), width: w * 0.15, height: w * 0.06), leaf);
-      canvas.restore();
-    }
-    _flower(canvas, Offset(w * 0.9, h * 0.2), w * 0.095);
-    _flower(canvas, Offset(w * 0.56, h * 0.5), w * 0.085);
-    _flower(canvas, Offset(w * 0.3, h * 0.74), w * 0.075);
-  }
-
-  void _flower(Canvas canvas, Offset c, double r) {
-    for (var i = 0; i < 5; i++) {
-      canvas.save();
-      canvas.translate(c.dx, c.dy);
-      canvas.rotate(i * 2 * math.pi / 5 - math.pi / 2);
-      canvas.drawOval(Rect.fromCenter(center: Offset(r * 0.55, 0), width: r * 1.15, height: r * 0.7), Paint()..color = AppColors.white);
-      canvas.restore();
-    }
-    canvas.drawCircle(c, r * 0.22, Paint()..color = AppColors.saffron);
   }
 
   @override
