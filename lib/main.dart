@@ -10,6 +10,7 @@ import 'features/chat/chat_detail_screen.dart';
 import 'features/chat/chat_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/legal/legal_screen.dart';
 import 'features/moderation/moderation_screen.dart';
 import 'features/notifications/notifications_screen.dart';
 import 'features/profile/blocked_users_screen.dart';
@@ -24,6 +25,9 @@ Future<void> main() async {
   runApp(const ElHrissaApp());
 }
 
+// Lisibles par tous, connecté ou non
+const _openRoutes = {'/terms', '/privacy'};
+
 const _publicRoutes = {'/welcome', '/login', '/register', '/forgot-password'};
 
 final GoRouter _router = GoRouter(
@@ -32,6 +36,7 @@ final GoRouter _router = GoRouter(
   redirect: (context, state) {
     final loggedIn = AuthState.instance.loggedIn ?? false;
     final path = state.matchedLocation;
+    if (_openRoutes.contains(path)) return null;
     final isPublic = _publicRoutes.contains(path);
 
     if (!loggedIn && !isPublic) return '/welcome';
@@ -40,6 +45,8 @@ final GoRouter _router = GoRouter(
   },
   routes: [
     GoRoute(path: '/welcome', builder: (context, state) => const WelcomeScreen()),
+    GoRoute(path: '/terms', builder: (context, state) => const LegalScreen.terms()),
+    GoRoute(path: '/privacy', builder: (context, state) => const LegalScreen.privacy()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
     GoRoute(

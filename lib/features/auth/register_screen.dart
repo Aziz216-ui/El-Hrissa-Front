@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../legal/legal_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -242,7 +243,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (v) => v == null || v.length < 8 ? '8 caractères minimum' : null,
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
+                const LegalLinks(align: TextAlign.start),
+                const SizedBox(height: 12),
 
                 // Bouton S'inscrire
                 ElevatedButton(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../legal/legal_screen.dart';
 
 /// Écran d'accueil avant la connexion.
 /// Un mur harissa à motif de zellige (étoiles khatem), et au centre la porte bleue de Sidi Bou Saïd,
@@ -393,6 +394,8 @@ class _Sheet extends StatelessWidget {
                 onPressed: () => context.go('/login'),
                 child: const Text("J'ai déjà un compte"),
               ),
+              const SizedBox(height: 6),
+              const Center(child: LegalLinks()),
             ],
           ),
         ),

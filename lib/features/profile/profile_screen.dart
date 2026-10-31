@@ -331,6 +331,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (AuthState.instance.isOrganizer)
         _SettingItem(Icons.admin_panel_settings_outlined, 'Modération', () => context.push('/moderation')),
       _SettingItem(Icons.mark_email_read_outlined, "Renvoyer l'email de vérification", _resendVerificationEmail),
+      _SettingItem(Icons.description_outlined, "Conditions d'utilisation", () => context.push('/terms')),
+      _SettingItem(Icons.privacy_tip_outlined, 'Politique de confidentialité', () => context.push('/privacy')),
       _SettingItem(Icons.logout, 'Se déconnecter', _logout, destructive: true),
       _SettingItem(Icons.delete_forever_outlined, 'Supprimer mon compte', _deleteAccount, destructive: true),
     ];
