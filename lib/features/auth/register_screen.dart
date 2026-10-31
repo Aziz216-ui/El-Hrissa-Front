@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../shared/widgets/harissa_shell.dart';
 import '../legal/legal_screen.dart';
 import 'google_sign_in_button.dart';
 
@@ -88,20 +89,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          tooltip: 'Retour',
-          onPressed: () => context.go('/welcome'),
-        ),
-        title: Text('Créer un compte', style: AppTextStyles.headlineMd),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
+    return HarissaShell(
+      // « Yalla, hayya binna » : allons-y
+      arabic: '\u0647\u064a\u0627 \u0628\u064a\u0646\u0627',
+      title: 'Créer un compte',
+      onBack: () => context.go('/welcome'),
+      child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -174,11 +167,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         const Icon(Icons.calendar_today_outlined, color: AppColors.outline),
                         const SizedBox(width: 12),
-                        Text(
-                          'Date de naissance : ${_dateNaissance.day.toString().padLeft(2, '0')}/${_dateNaissance.month.toString().padLeft(2, '0')}/${_dateNaissance.year}',
-                          style: AppTextStyles.bodyMd,
+                        Expanded(
+                          child: Text(
+                            'Date de naissance : ${_dateNaissance.day.toString().padLeft(2, '0')}/${_dateNaissance.month.toString().padLeft(2, '0')}/${_dateNaissance.year}',
+                            style: AppTextStyles.bodyMd,
+                          ),
                         ),
-                        const Spacer(),
                         const Icon(Icons.edit, size: 18, color: AppColors.primary),
                       ],
                     ),
@@ -187,7 +181,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
 
                 // Genre
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text('Genre : ', style: AppTextStyles.labelMd),
                     const SizedBox(width: 12),
@@ -265,21 +260,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
 
                 // Lien vers Login
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text('Vous avez déjà un compte ? ', style: AppTextStyles.bodyMd),
-                    GestureDetector(
-                      onTap: () => context.go('/login'),
-                      child: Text('Se connecter', style: AppTextStyles.labelMdPrimary),
+                    Text('Vous avez déjà un compte ?', style: AppTextStyles.bodyMdMuted),
+                    TextButton(
+                      onPressed: () => context.go('/login'),
+                      child: const Text('Se connecter'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
               ],
             ),
-          ),
-        ),
       ),
     );
   }

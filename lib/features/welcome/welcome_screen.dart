@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../shared/widgets/harissa_shell.dart';
 import '../legal/legal_screen.dart';
 import 'welcome_characters.dart';
 
@@ -58,7 +59,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       backgroundColor: AppColors.primary,
       body: Stack(
         children: [
-          const Positioned.fill(child: ExcludeSemantics(child: CustomPaint(painter: _TileWallPainter()))),
+          const Positioned.fill(child: ExcludeSemantics(child: CustomPaint(painter: TileWallPainter()))),
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
@@ -179,35 +180,6 @@ class _Hero extends StatelessWidget {
   }
 }
 
-/// Carreaux étoilés à huit branches (khatem), pleins, ton sur ton.
-class _TileWallPainter extends CustomPainter {
-  const _TileWallPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const spacing = 58.0;
-    const outer = 25.0;
-    const inner = outer * 0.7;
-    final paint = Paint()..color = const Color(0xFF9F1019);
-    var row = 0;
-    for (var y = 0.0; y < size.height + spacing; y += spacing * 0.9, row++) {
-      for (var x = row.isOdd ? spacing / 2 : 0.0; x < size.width + spacing; x += spacing) {
-        final path = Path();
-        for (var i = 0; i < 16; i++) {
-          final a = i * math.pi / 8 - math.pi / 2;
-          final r = i.isEven ? outer : inner;
-          final p = Offset(x + r * math.cos(a), y + r * math.sin(a));
-          i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
-        }
-        canvas.drawPath(path..close(), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 /// Coup de pinceau safran sous l'enseigne.
 class _BrushStrokePainter extends CustomPainter {
   const _BrushStrokePainter();
@@ -287,26 +259,6 @@ class _ChiliPainter extends CustomPainter {
 
 // ------------------------------------------------------------------------ Étiquette
 
-/// Bord supérieur en festons, comme le papier d'une étiquette ou une dentelle de zellige.
-class _ScallopClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final bumps = math.max(6, (size.width / 30).round());
-    final r = size.width / (bumps * 2);
-    final path = Path()..moveTo(0, r);
-    for (var i = 0; i < bumps; i++) {
-      path.arcToPoint(Offset((i + 1) * 2 * r, r), radius: Radius.circular(r), clockwise: true);
-    }
-    return path
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
 class _Label extends StatelessWidget {
   final Animation<double> intro;
   const _Label({required this.intro});
@@ -320,7 +272,7 @@ class _Label extends StatelessWidget {
         return Transform.translate(offset: Offset(0, 36 * (1 - t)), child: child);
       },
       child: ClipPath(
-        clipper: _ScallopClipper(),
+        clipper: ScallopClipper(),
         child: Container(
           width: double.infinity,
           color: AppColors.surfaceWhite,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 
 /// « Continuer avec Google » : récupère nom, prénom et email du compte Gmail, puis connecte
 /// ou crée le compte. Le routeur envoie ensuite vers /complete-identity si le genre et la date
@@ -33,34 +32,18 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('ou', style: AppTextStyles.bodyMdMuted),
-            ),
-            const Expanded(child: Divider()),
-          ],
-        ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _loading ? null : _signIn,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.onSurface,
-            minimumSize: const Size.fromHeight(52),
-            side: const BorderSide(color: AppColors.outline),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-          icon: _loading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
-              : const Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF4285F4))),
-          label: const Text('Continuer avec Google'),
-        ),
-      ],
+    // Bouton plein, sans cadre : un aplat gris clair, comme les autres boutons secondaires
+    return ElevatedButton.icon(
+      onPressed: _loading ? null : _signIn,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.surfaceLow,
+        foregroundColor: AppColors.onSurface,
+        elevation: 0,
+      ),
+      icon: _loading
+          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
+          : const Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF4285F4))),
+      label: const Text('Continuer avec Google'),
     );
   }
 }

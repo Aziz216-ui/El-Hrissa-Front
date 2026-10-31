@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../shared/widgets/harissa_shell.dart';
 import '../../shared/widgets/state_views.dart';
 
 /// Demande d'un lien de réinitialisation. Le message de confirmation est le même que l'adresse
@@ -42,26 +43,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.go('/login'),
-        ),
-        title: Text('Mot de passe oublié', style: AppTextStyles.headlineMd),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: _sent ? _buildConfirmation() : _buildForm(),
-            ),
-          ),
-        ),
-      ),
+    return HarissaShell(
+      // « Nsit » : j'ai oublié
+      arabic: '\u0646\u0633\u064a\u062a',
+      title: _sent ? 'Vérifiez votre boîte mail' : 'Mot de passe oublié',
+      onBack: () => context.go('/login'),
+      child: _sent ? _buildConfirmation() : _buildForm(),
     );
   }
 
@@ -72,10 +59,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Saisissez l\'adresse email de votre compte. Nous vous enverrons un lien pour choisir un nouveau mot de passe.',
+            'Nous vous envoyons un lien pour choisir un nouveau mot de passe.',
             style: AppTextStyles.bodyMdMuted,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
@@ -114,8 +101,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const SizedBox(height: 24),
         const Icon(Icons.mark_email_read_outlined, size: 64, color: AppColors.primary),
         const SizedBox(height: 20),
-        Text('Vérifiez votre boîte mail', style: AppTextStyles.headlineMd, textAlign: TextAlign.center),
-        const SizedBox(height: 12),
         Text(
           'Si un compte existe pour ${_emailController.text.trim()}, un lien de réinitialisation vient d\'être envoyé. '
           'Il est valable 1 heure. Pensez à regarder dans vos indésirables.',
