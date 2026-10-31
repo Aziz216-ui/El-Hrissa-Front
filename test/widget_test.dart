@@ -15,6 +15,7 @@ void main() {
     await AuthState.instance.init();
 
     await tester.pumpWidget(const ElHrissaApp());
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
 
     expect(find.text('Créer un compte'), findsOneWidget);
@@ -23,15 +24,18 @@ void main() {
 
     // Les textes légaux sont accessibles depuis l'accueil
     await tester.tap(find.text("Conditions d'utilisation"));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.textContaining('Dernière mise à jour'), findsOneWidget);
     expect(find.text('Qui peut utiliser Elahrisa'), findsOneWidget);
     await tester.tap(find.byTooltip('Retour'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.text('Créer un compte'), findsOneWidget);
 
     // « Se connecter » mène à la connexion
     await tester.tap(find.text('Se connecter'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.text('Se connecter'), findsWidgets);
   });
