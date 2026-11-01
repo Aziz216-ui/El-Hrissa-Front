@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/models/event_models.dart';
 import '../../core/models/profile_models.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/services/event_service.dart';
 import '../../core/services/swipe_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -33,12 +34,14 @@ class _EventsScreenState extends State<EventsScreen> {
   bool _isLoading = true;
   String? _error;
   final Set<int> _busy = {};
+  int? _myId;
 
   bool get _hasActiveFilter => _city != null || _category != null;
 
   @override
   void initState() {
     super.initState();
+    AuthService().getCurrentUserId().then((id) => _myId = id);
     _loadFilters();
     _load();
   }
@@ -224,7 +227,8 @@ class _EventsScreenState extends State<EventsScreen> {
       builder: (_) => _EventDetailSheet(
         event: event,
         joined: _joined.contains(event.id),
-        canDelete: AuthState.instance.isOrganizer,
+        // Un organisateur ne supprime que ses propres événements
+        canDelete: AuthState.instance.isOrganizer && event.createdByUserId != null && event.createdByUserId == _myId,
         onToggle: () {
           Navigator.pop(context);
           _toggle(event);
