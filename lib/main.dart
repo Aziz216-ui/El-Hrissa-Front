@@ -3,6 +3,7 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'core/auth/auth_state.dart';
+import 'core/push/push_service.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'shared/widgets/web_frame.dart';
@@ -30,6 +31,26 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthState.instance.init();
   runApp(const ElHrissaApp());
+
+  // Notifications push : après l'affichage de l'app, sans la retarder. Facultatif (Android seulement).
+  AuthState.instance.addListener(_syncPushRegistration);
+  await PushService.instance.init(navigate: _router.go, messengerKey: _messengerKey);
+  _syncPushRegistration();
+}
+
+final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+bool _pushRegistered = false;
+
+/// Dès qu'on est connecté, ce téléphone est enregistré pour recevoir les notifications.
+void _syncPushRegistration() {
+  final loggedIn = AuthState.instance.loggedIn == true && !AuthState.instance.needsIdentity;
+  if (loggedIn && !_pushRegistered) {
+    _pushRegistered = true;
+    PushService.instance.register();
+  } else if (!loggedIn) {
+    _pushRegistered = false;
+  }
 }
 
 // Lisibles par tous, connecté ou non
@@ -127,6 +148,7 @@ class ElHrissaApp extends StatelessWidget {
       title: 'Elahrisa',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      scaffoldMessengerKey: _messengerKey,
       scrollBehavior: const _AnyDeviceScrollBehavior(),
       builder: (context, child) => WebFrame(child: child ?? const SizedBox.shrink()),
       routerConfig: _router,

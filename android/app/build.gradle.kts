@@ -6,6 +6,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Sans google-services.json (autre machine, CI), l'app se compile quand même : seules les notifications push sont absentes
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "tn.elhrissa.el_hrissa_front"
     compileSdk = flutter.compileSdkVersion

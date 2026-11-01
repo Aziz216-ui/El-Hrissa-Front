@@ -2,11 +2,23 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Android 13 et plus : afficher des notifications (l'app la demande à la connexion) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="El-Hrissa"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Notifications push : canal, petite icône blanche et couleur de la marque -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="elahrisa_default"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notification"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Clés de compte de service Firebase (secrètes) : ne jamais les commiter. google-services.json, lui, n est pas secret.
+*firebase-adminsdk*.json

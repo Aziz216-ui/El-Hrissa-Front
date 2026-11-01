@@ -1,10 +1,11 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import '../api/api_client.dart';
 import '../api/api_error.dart';
 import '../api/endpoints.dart';
 import '../auth/auth_state.dart';
+import '../push/push_service.dart';
 import '../auth/remembered_login.dart';
 import '../models/auth_models.dart';
 
@@ -140,6 +141,8 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    // Avant d'effacer la session : le serveur doit encore nous reconnaître pour retirer ce téléphone
+    await PushService.instance.unregister().timeout(const Duration(seconds: 4), onTimeout: () {});
     await _api.clearToken();
     AuthState.instance.setLoggedOut();
   }

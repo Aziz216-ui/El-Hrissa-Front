@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "394889049048",
+    "project_id": "elahrisa-bedf0",
+    "storage_bucket": "elahrisa-bedf0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394889049048:android:28f73d2ccce0f3f49038ad",
+        "android_client_info": {
+          "package_name": "tn.elhrissa.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDwUpaaPQ2ND0tWq9f4FpJLz-VJZB8bgA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

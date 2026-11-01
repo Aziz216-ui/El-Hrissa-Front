@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/models/notification_models.dart';
+import '../../core/notifications/notification_routes.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -59,27 +60,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) return;
     // NEW_MATCH / NEW_MESSAGE / NEW_REQUEST : tous mènent aux messages (les demandes y sont en haut)
     // Décision de vérification : on ouvre le profil ; les autres types mènent aux messages (les demandes y sont en haut)
-    context.go(_destination(n.type));
-  }
-
-  /// Où mène chaque type de notification.
-  String _destination(String type) {
-    if (type.startsWith('VERIFICATION_')) return '/profile';
-    switch (type) {
-      case 'NEW_ATTENDEE':
-        return '/my-events';
-      case 'NEW_ORGANIZER_REQUEST':
-        return '/moderation';
-      case 'ORGANIZER_APPROVED':
-      case 'ORGANIZER_REJECTED':
-        return '/profile';
-      case 'WAITLIST_PROMOTED':
-      case 'EVENT_REMINDER':
-      case 'EVENT_CROSSED':
-        return '/events';
-      default:
-        return '/chat';
-    }
+    context.go(notificationDestination(n.type));
   }
 
   IconData _icon(String type) {
