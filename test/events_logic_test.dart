@@ -65,4 +65,55 @@ void main() {
     expect(eventCategoryLabel('THEATRE'), 'Théâtre');
     expect(eventCategoryLabel('NOUVEAU'), 'NOUVEAU');
   });
+
+  group("places et liste d'attente", () {
+    EventResponse withCapacity(int? capacity, int? left, {DateTime? starts, DateTime? ends}) => EventResponse.fromJson({
+          'id': 1,
+          'name': 'Sortie',
+          'attendeeCount': (capacity ?? 0) - (left ?? 0),
+          'capacity': capacity,
+          'spotsLeft': left,
+          'startsAt': starts?.toUtc().toIso8601String(),
+          'endsAt': ends?.toUtc().toIso8601String(),
+        });
+
+    test("un événement sans limite n'est jamais complet", () {
+      expect(withCapacity(null, null).isFull, isFalse);
+    });
+
+    test('il est complet quand il ne reste aucune place', () {
+      expect(withCapacity(10, 0).isFull, isTrue);
+      expect(withCapacity(10, 3).isFull, isFalse);
+    });
+
+    test("il est terminé 4 h après son début s'il n'a pas d'heure de fin", () {
+      final now = DateTime.now();
+      expect(withCapacity(null, null, starts: now.subtract(const Duration(hours: 5))).hasEnded, isTrue);
+      expect(withCapacity(null, null, starts: now.subtract(const Duration(hours: 2))).hasEnded, isFalse);
+      expect(withCapacity(null, null, starts: now.subtract(const Duration(hours: 9)), ends: now.add(const Duration(hours: 1))).hasEnded, isFalse);
+      expect(withCapacity(null, null).hasEnded, isFalse);
+    });
+
+    test('un ancien serveur sans ces champs reste compris', () {
+      final e = EventResponse.fromJson({'id': 2, 'name': 'Ancien', 'attendeeCount': 4});
+      expect(e.capacity, isNull);
+      expect(e.isFull, isFalse);
+      expect(e.waitlistCount, isNull);
+    });
+  });
+
+  test('la page organisateur est lue telle que le serveur la renvoie', () {
+    final o = OrganizerResponse.fromJson({
+      'userId': 7,
+      'displayName': 'Club S.',
+      'eventsCount': 3,
+      'participantsCount': 41,
+      'upcomingEvents': [
+        {'id': 1, 'name': 'Soirée', 'attendeeCount': 12, 'capacity': 20, 'spotsLeft': 8}
+      ],
+    });
+    expect(o.displayName, 'Club S.');
+    expect(o.participantsCount, 41);
+    expect(o.upcomingEvents.single.spotsLeft, 8);
+  });
 }

@@ -59,11 +59,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) return;
     // NEW_MATCH / NEW_MESSAGE / NEW_REQUEST : tous mènent aux messages (les demandes y sont en haut)
     // Décision de vérification : on ouvre le profil ; les autres types mènent aux messages (les demandes y sont en haut)
-    context.go(n.type.startsWith('VERIFICATION_') ? '/profile' : '/chat');
+    context.go(_destination(n.type));
+  }
+
+  /// Où mène chaque type de notification.
+  String _destination(String type) {
+    if (type.startsWith('VERIFICATION_')) return '/profile';
+    switch (type) {
+      case 'NEW_ATTENDEE':
+        return '/my-events';
+      case 'WAITLIST_PROMOTED':
+      case 'EVENT_REMINDER':
+      case 'EVENT_CROSSED':
+        return '/events';
+      default:
+        return '/chat';
+    }
   }
 
   IconData _icon(String type) {
     switch (type) {
+      case 'NEW_ATTENDEE':
+        return Icons.group_add_outlined;
+      case 'WAITLIST_PROMOTED':
+        return Icons.event_available;
+      case 'EVENT_REMINDER':
+        return Icons.alarm;
+      case 'EVENT_CROSSED':
+        return Icons.favorite_border;
       case 'NEW_MATCH':
         return Icons.favorite;
       case 'VERIFICATION_APPROVED':

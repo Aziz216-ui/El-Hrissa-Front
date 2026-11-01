@@ -16,6 +16,7 @@ import '../../shared/widgets/network_photo.dart';
 import '../../shared/widgets/notification_bell.dart';
 import '../../shared/widgets/state_views.dart';
 import '../../shared/widgets/tab_band.dart';
+import 'event_form_sheet.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -35,6 +36,9 @@ class _EventsScreenState extends State<EventsScreen> {
   String? _error;
   final Set<int> _busy = {};
   int? _myId;
+  Set<int> _waitlisted = {};
+  Map<int, int> _compatible = {};
+  List<EventResponse> _crossed = [];
 
   bool get _hasActiveFilter => _city != null || _category != null;
 
@@ -60,18 +64,30 @@ class _EventsScreenState extends State<EventsScreen> {
       final results = await Future.wait([
         _service.getEvents(city: _city, category: _category),
         _service.getJoinedEventIds(),
+        _service.getWaitlistedEventIds(),
+        _service.getCrossedEvents(),
       ]);
       if (mounted) {
         setState(() {
           _events = results[0] as List<EventResponse>;
           _joined = results[1] as Set<int>;
+          _waitlisted = results[2] as Set<int>;
+          _crossed = results[3] as List<EventResponse>;
         });
+        _loadCompatible();
       }
     } catch (e) {
       if (mounted) setState(() => _error = cleanError(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// « dont N pour vous » : demandé à part, la liste des événements ne l'attend pas.
+  Future<void> _loadCompatible() async {
+    final ids = _events.where((e) => e.action != EventAction.suggestion).map((e) => e.id).toList();
+    final counts = await _service.getCompatibleCounts(ids);
+    if (mounted) setState(() => _compatible = counts);
   }
 
   void _clearFilters() {
@@ -140,16 +156,20 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<void> _toggle(EventResponse event) async {
     if (_busy.contains(event.id)) return;
     final wasJoined = _joined.contains(event.id);
+    final wasWaitlisted = _waitlisted.contains(event.id);
+    var nowWaitlisted = false;
     setState(() => _busy.add(event.id));
     try {
       if (wasJoined) {
         await _service.leaveEvent(event.id);
       } else {
-        await _service.joinEvent(event.id);
+        nowWaitlisted = await _service.joinEvent(event.id);
       }
       if (!mounted) return;
       if (wasJoined) {
-        showSnack(context, 'Inscription annulée');
+        showSnack(context, wasWaitlisted ? "Vous avez quitté la liste d'attente" : 'Inscription annulée');
+      } else if (nowWaitlisted) {
+        showSnack(context, '« ${event.name} » est complet : vous êtes sur la liste d\'attente. On vous prévient si une place se libère.');
       } else {
         // On ne laisse pas l'utilisateur devant un écran inchangé : on propose la suite
         ScaffoldMessenger.of(context)
@@ -185,7 +205,7 @@ class _EventsScreenState extends State<EventsScreen> {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const _CreateEventSheet(),
+      builder: (_) => const EventFormSheet(),
     );
     if (created == true) {
       _loadFilters();
@@ -227,6 +247,12 @@ class _EventsScreenState extends State<EventsScreen> {
       builder: (_) => _EventDetailSheet(
         event: event,
         joined: _joined.contains(event.id),
+        waitlisted: _waitlisted.contains(event.id),
+        compatible: _compatible[event.id] ?? 0,
+        onOpenOrganizer: () {
+          Navigator.pop(context);
+          context.push('/organizer/${event.createdByUserId}');
+        },
         // Un organisateur ne supprime que ses propres événements
         canDelete: AuthState.instance.isOrganizer && event.createdByUserId != null && event.createdByUserId == _myId,
         onToggle: () {
@@ -262,10 +288,18 @@ class _EventsScreenState extends State<EventsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // « Khrejet » : les sorties
-            const TabBand(
+            TabBand(
               arabic: '\u062e\u0631\u062c\u0627\u062a',
               title: 'Événements',
-              actions: [NotificationBell(onBand: true)],
+              actions: [
+                if (AuthState.instance.isOrganizer)
+                  BandAction(
+                    icon: Icons.event_note_outlined,
+                    tooltip: 'Mes événements',
+                    onPressed: () => context.push('/my-events').then((_) => _load()),
+                  ),
+                const NotificationBell(onBand: true),
+              ],
             ),
             const SizedBox(height: 12),
             _buildFilterBar(),
@@ -331,8 +365,50 @@ class _EventsScreenState extends State<EventsScreen> {
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 96),
-        itemCount: _events.length,
-        itemBuilder: (context, index) => _buildCard(_events[index]),
+        itemCount: _events.length + (_crossed.isEmpty ? 0 : 1),
+        itemBuilder: (context, index) {
+          if (_crossed.isEmpty) return _buildCard(_events[index]);
+          return index == 0 ? _buildCrossedBanner() : _buildCard(_events[index - 1]);
+        },
+      ),
+    );
+  }
+
+  /// Après une sortie, pendant 48 h : retrouver les personnes qui y étaient aussi.
+  Widget _buildCrossedBanner() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: AppColors.pastelPink, borderRadius: BorderRadius.circular(AppRadius.card)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.favorite_border_rounded, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Qui avez-vous croisé ?', style: AppTextStyles.titleMd)),
+              ],
+            ),
+            for (final e in _crossed) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Vous étiez à « ${e.name} » avec ${e.attendeeCount - 1} ${e.attendeeCount - 1 > 1 ? 'autres personnes' : 'autre personne'}.',
+                style: AppTextStyles.bodyMd,
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _discover(e),
+                icon: const Icon(Icons.style_rounded, size: 18),
+                label: const Text('Les retrouver'),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text('Disponible pendant 48 h après la fin de la sortie.', style: AppTextStyles.labelSm),
+          ],
+        ),
       ),
     );
   }
@@ -406,6 +482,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   ],
                 ),
                 _EventTags(event: event),
+                _EventSocialLine(event: event, compatible: _compatible[event.id] ?? 0),
                 const SizedBox(height: 14),
                 _buildAction(event, joined: joined, busy: busy),
               ],
@@ -427,6 +504,18 @@ class _EventsScreenState extends State<EventsScreen> {
           style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
         );
       case EventAction.register:
+        if (joined && _waitlisted.contains(event.id)) {
+          return Column(
+            children: [
+              const _WaitlistNote(),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: busy ? null : () => _toggle(event),
+                child: const Text("Quitter la liste d'attente"),
+              ),
+            ],
+          );
+        }
         if (joined) {
           return Column(
             children: [
@@ -449,11 +538,80 @@ class _EventsScreenState extends State<EventsScreen> {
           style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
           child: busy
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text("S'inscrire"),
+              : Text(event.isFull ? "Rejoindre la liste d'attente" : "S'inscrire"),
         );
       case EventAction.suggestion:
         return const _SuggestionNote();
     }
+  }
+}
+
+/// Places restantes et nombre de participants qui pourraient vous plaire.
+class _EventSocialLine extends StatelessWidget {
+  final EventResponse event;
+  final int compatible;
+  const _EventSocialLine({required this.event, required this.compatible});
+
+  @override
+  Widget build(BuildContext context) {
+    if (event.action == EventAction.suggestion) return const SizedBox.shrink();
+    final items = <Widget>[];
+    final left = event.spotsLeft;
+    if (event.capacity != null && left != null) {
+      final full = left <= 0;
+      final text = full ? "Complet · liste d'attente" : (left <= 5 ? 'Plus que $left place${left > 1 ? 's' : ''}' : '$left places restantes');
+      items.add(_pill(Icons.event_seat_outlined, text, warn: full || left <= 5));
+    }
+    if (compatible > 0) {
+      items.add(_pill(Icons.favorite_border_rounded, '$compatible pour vous', warn: true));
+    }
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Wrap(spacing: 8, runSpacing: 6, children: items),
+    );
+  }
+
+  Widget _pill(IconData icon, String text, {bool warn = false}) {
+    final color = warn ? AppColors.primary : AppColors.sidi;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: warn ? AppColors.pastelPink : AppColors.sidiTint, borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 5),
+          Text(text, style: AppTextStyles.labelSm.copyWith(color: color, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Événement complet : la personne attend qu'une place se libère.
+class _WaitlistNote extends StatelessWidget {
+  const _WaitlistNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(color: AppColors.pastelPink, borderRadius: BorderRadius.circular(AppRadius.control)),
+      child: Row(
+        children: [
+          const Icon(Icons.hourglass_bottom_rounded, size: 20, color: AppColors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Vous êtes sur la liste d'attente. On vous prévient dès qu'une place se libère.",
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -566,6 +724,9 @@ class _SuggestionNote extends StatelessWidget {
 class _EventDetailSheet extends StatefulWidget {
   final EventResponse event;
   final bool joined;
+  final bool waitlisted;
+  final int compatible;
+  final VoidCallback onOpenOrganizer;
   final bool canDelete;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
@@ -575,6 +736,9 @@ class _EventDetailSheet extends StatefulWidget {
   const _EventDetailSheet({
     required this.event,
     required this.joined,
+    required this.waitlisted,
+    required this.compatible,
+    required this.onOpenOrganizer,
     required this.canDelete,
     required this.onToggle,
     required this.onDelete,
@@ -651,6 +815,16 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
             ],
           ),
           _EventTags(event: e),
+          _EventSocialLine(event: e, compatible: widget.compatible),
+          if (e.createdByUserId != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: widget.onOpenOrganizer,
+                icon: const Icon(Icons.verified_outlined, size: 18),
+                label: const Text("Voir l'organisateur"),
+              ),
+            ),
           if (e.description != null && e.description!.isNotEmpty) ...[
             const SizedBox(height: 20),
             Text(e.description!, style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant)),
@@ -737,6 +911,13 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
           ),
         ];
       case EventAction.register:
+        if (widget.joined && widget.waitlisted) {
+          return [
+            const _WaitlistNote(),
+            const SizedBox(height: 10),
+            OutlinedButton(onPressed: widget.onToggle, child: const Text("Quitter la liste d'attente")),
+          ];
+        }
         return [
           if (widget.joined) ...[
             ElevatedButton.icon(
@@ -748,7 +929,10 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
           ],
           widget.joined
               ? OutlinedButton(onPressed: widget.onToggle, child: const Text('Annuler mon inscription'))
-              : ElevatedButton(onPressed: widget.onToggle, child: const Text("S'inscrire")),
+              : ElevatedButton(
+                  onPressed: widget.onToggle,
+                  child: Text(e.isFull ? "Rejoindre la liste d'attente" : "S'inscrire"),
+                ),
         ];
       case EventAction.suggestion:
         return const [_SuggestionNote()];
@@ -861,136 +1045,6 @@ class _AttendeeSheetState extends State<_AttendeeSheet> {
                 label: const Text('J\'aimerais la connaître'),
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CreateEventSheet extends StatefulWidget {
-  const _CreateEventSheet();
-
-  @override
-  State<_CreateEventSheet> createState() => _CreateEventSheetState();
-}
-
-class _CreateEventSheetState extends State<_CreateEventSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _venue = TextEditingController();
-  final _city = TextEditingController();
-  final _description = TextEditingController();
-  String? _category;
-  DateTime? _startsAt;
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _venue.dispose();
-    _city.dispose();
-    _description.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      initialDate: now.add(const Duration(days: 1)),
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365 * 2)),
-    );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 20, minute: 0));
-    if (time == null) return;
-    setState(() => _startsAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_startsAt == null) {
-      showSnack(context, 'Choisissez la date et l\'heure', error: true);
-      return;
-    }
-    setState(() => _saving = true);
-    try {
-      await EventService().createEvent(
-        name: _name.text.trim(),
-        venueName: _venue.text.trim(),
-        city: _city.text.trim(),
-        category: _category,
-        description: _description.text.trim(),
-        startsAt: _startsAt!,
-      );
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (mounted) showSnack(context, cleanError(e), error: true);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Nouvel événement', style: AppTextStyles.headlineMd),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _name,
-                maxLength: 255,
-                decoration: const InputDecoration(labelText: 'Nom'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Requis' : null,
-              ),
-              const SizedBox(height: 8),
-              TextFormField(controller: _venue, maxLength: 255, decoration: const InputDecoration(labelText: 'Lieu')),
-              const SizedBox(height: 8),
-              TextFormField(controller: _city, maxLength: 100, decoration: const InputDecoration(labelText: 'Ville')),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String?>(
-                initialValue: _category,
-                decoration: const InputDecoration(labelText: 'Type (facultatif)'),
-                items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('Choisi automatiquement')),
-                  for (final entry in eventCategoryLabels.entries)
-                    DropdownMenuItem<String?>(value: entry.key, child: Text(entry.value)),
-                ],
-                onChanged: (value) => setState(() => _category = value),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _description,
-                maxLength: 2000,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _pickDate,
-                icon: const Icon(Icons.event_rounded),
-                label: Text(_startsAt == null ? 'Date et heure' : formatEventDate(_startsAt)),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                      )
-                    : const Text('Publier'),
-              ),
-            ],
-          ),
         ),
       ),
     );

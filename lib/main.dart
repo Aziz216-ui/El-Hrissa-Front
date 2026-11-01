@@ -10,6 +10,8 @@ import 'features/auth/register_screen.dart';
 import 'features/chat/chat_detail_screen.dart';
 import 'features/chat/chat_screen.dart';
 import 'features/events/events_screen.dart';
+import 'features/events/my_events_screen.dart';
+import 'features/events/organizer_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/legal/legal_screen.dart';
 import 'features/moderation/moderation_screen.dart';
@@ -89,6 +91,11 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
     GoRoute(path: '/search-people', builder: (context, state) => const PeopleSearchScreen()),
     GoRoute(path: '/moderation', builder: (context, state) => const ModerationScreen()),
+    GoRoute(path: '/my-events', builder: (context, state) => const MyEventsScreen()),
+    GoRoute(
+      path: '/organizer/:id',
+      builder: (context, state) => OrganizerScreen(userId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0),
+    ),
   ],
   errorBuilder: (context, state) => const Scaffold(
     body: Center(child: Text('Page introuvable', style: TextStyle(color: AppColors.onSurfaceVariant))),

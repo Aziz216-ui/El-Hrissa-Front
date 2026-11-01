@@ -1,4 +1,4 @@
-﻿/// Ce que l'utilisateur peut faire d'un événement.
+/// Ce que l'utilisateur peut faire d'un événement.
 enum EventAction {
   /// Il existe une page de réservation (billetterie) : on l'ouvre.
   book,
@@ -42,6 +42,13 @@ class EventResponse {
   final int? createdByUserId;
   final int attendeeCount;
 
+  /// Nombre de places (null = illimité) et places restantes.
+  final int? capacity;
+  final int? spotsLeft;
+
+  /// Personnes sur liste d'attente (renseigné seulement pour l'organisateur).
+  final int? waitlistCount;
+
   EventResponse({
     required this.id,
     required this.name,
@@ -57,7 +64,19 @@ class EventResponse {
     this.endsAt,
     this.createdByUserId,
     required this.attendeeCount,
+    this.capacity,
+    this.spotsLeft,
+    this.waitlistCount,
   });
+
+  /// Toutes les places sont prises : on s'inscrit sur liste d'attente.
+  bool get isFull => capacity != null && (spotsLeft ?? 1) <= 0;
+
+  bool get hasEnded {
+    final start = startsAt;
+    if (start == null) return false;
+    return (endsAt ?? start.add(const Duration(hours: 4))).isBefore(DateTime.now());
+  }
 
   bool get hasBookingLink => sourceUrl != null && sourceUrl!.trim().isNotEmpty;
 
@@ -88,6 +107,9 @@ class EventResponse {
           json['endsAt'] != null ? DateTime.tryParse(json['endsAt'])?.toLocal() : null,
       createdByUserId: json['createdByUserId'],
       attendeeCount: json['attendeeCount'] ?? 0,
+      capacity: json['capacity'],
+      spotsLeft: json['spotsLeft'],
+      waitlistCount: json['waitlistCount'],
     );
   }
 }
@@ -103,5 +125,32 @@ class EventFilters {
   factory EventFilters.fromJson(Map<String, dynamic> json) {
     List<String> strings(dynamic raw) => (raw as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
     return EventFilters(cities: strings(json['cities']), categories: strings(json['categories']));
+  }
+}
+
+/// Page publique d'un organisateur.
+class OrganizerResponse {
+  final int userId;
+  final String displayName;
+  final int eventsCount;
+  final int participantsCount;
+  final List<EventResponse> upcomingEvents;
+
+  OrganizerResponse({
+    required this.userId,
+    required this.displayName,
+    required this.eventsCount,
+    required this.participantsCount,
+    required this.upcomingEvents,
+  });
+
+  factory OrganizerResponse.fromJson(Map<String, dynamic> json) {
+    return OrganizerResponse(
+      userId: json['userId'] ?? 0,
+      displayName: json['displayName'] ?? '',
+      eventsCount: (json['eventsCount'] as num?)?.toInt() ?? 0,
+      participantsCount: (json['participantsCount'] as num?)?.toInt() ?? 0,
+      upcomingEvents: ((json['upcomingEvents'] as List<dynamic>?) ?? []).map((e) => EventResponse.fromJson(e)).toList(),
+    );
   }
 }
