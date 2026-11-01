@@ -65,26 +65,35 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
     try {
-      final matches = await _swipeService.getMyMatches();
-      // Dernier message de chaque conversation (une erreur ponctuelle ne bloque pas la liste)
-      final conversations = await Future.wait(matches.map((m) async {
-        try {
-          final msgs = await _messageService.getMessages(m.matchId, size: 1);
-          return _Conversation(m, msgs.isNotEmpty ? msgs.first : null);
-        } catch (_) {
-          return _Conversation(m, null);
-        }
-      }));
+      // Matchs, derniers messages et demandes sont demandés en même temps (une seule attente)
+      final results = await Future.wait<Object?>([
+        _swipeService.getMyMatches(),
+        _messageService.getLastMessages(),
+        _loadRequests(),
+      ]);
+      final matches = results[0] as List<MatchResponse>;
+      final lastByMatch = results[1] as Map<int, MessageResponse>?;
+      final requests = results[2] as List<ConnectionRequest>;
+
+      final List<_Conversation> conversations;
+      if (lastByMatch != null) {
+        conversations = matches.map((m) => _Conversation(m, lastByMatch[m.matchId])).toList();
+      } else {
+        // Serveur plus ancien : un appel par conversation (une erreur ponctuelle ne bloque pas la liste)
+        conversations = await Future.wait(matches.map((m) async {
+          try {
+            final msgs = await _messageService.getMessages(m.matchId, size: 1);
+            return _Conversation(m, msgs.isNotEmpty ? msgs.first : null);
+          } catch (_) {
+            return _Conversation(m, null);
+          }
+        }));
+      }
       conversations.sort((a, b) {
         final ta = a.lastMessage?.createdAt ?? a.match.matchedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         final tb = b.lastMessage?.createdAt ?? b.match.matchedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         return tb.compareTo(ta);
       });
-      // Les demandes reçues : une erreur ici ne doit pas vider la liste des conversations
-      List<ConnectionRequest> requests = [];
-      try {
-        requests = await _peopleService.getRequests();
-      } catch (_) {}
       if (mounted) {
         setState(() {
           _conversations = conversations;
@@ -95,6 +104,15 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted && !silent) setState(() => _error = cleanError(e));
     } finally {
       if (mounted && !silent) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Les demandes reçues : une erreur ici ne doit pas vider la liste des conversations.
+  Future<List<ConnectionRequest>> _loadRequests() async {
+    try {
+      return await _peopleService.getRequests();
+    } catch (_) {
+      return [];
     }
   }
 

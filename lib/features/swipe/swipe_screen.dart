@@ -31,6 +31,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
   ProfileResponse? _myProfile;
   bool _isLoading = true;
   bool _isSwiping = false;
+  bool _prefetching = false;
   String? _error;
   bool _needsLocation = false;
   int _currentIndex = 0;
@@ -56,26 +57,32 @@ class _SwipeScreenState extends State<SwipeScreen> {
       _needsLocation = false;
     });
     try {
-      _myProfile = await _profileService.getMyProfile();
+      // Le profil ne change pas d'un chargement à l'autre : on ne le redemande pas à chaque actualisation.
+      // Le profil et les candidats sont demandés en même temps (deux attentes en une).
+      final profileFuture = _myProfile != null ? Future.value(_myProfile!) : _profileService.getMyProfile();
+      final candidatesFuture = _fetchCandidates().then<(List<CandidateResponse>, Object?)>((c) => (c, null)).catchError(
+            (Object e) => (<CandidateResponse>[], e),
+          );
+      _myProfile = await profileFuture;
+      var (candidates, candidatesError) = await candidatesFuture;
       if (widget.eventId == null && !_myProfile!.hasLocation) {
-        // Première utilisation : on tente le GPS automatiquement
+        // Première utilisation : on tente le GPS automatiquement, puis on redemande les candidats
         final result = await LocationHelper.updateFromDevice();
         if (result != LocationResult.ok) {
           if (mounted) setState(() => _needsLocation = true);
           return;
         }
+        _myProfile = null;
+        candidates = await _fetchCandidates();
+        candidatesError = null;
       }
-      final candidates = await _swipeService.getCandidates(
-        radiusKm: widget.eventId == null ? _radiusKm : null,
-        ageMin: _ageRange.start.round(),
-        ageMax: _ageRange.end.round(),
-        eventId: widget.eventId,
-      );
+      if (candidatesError != null) throw candidatesError;
       if (mounted) {
         setState(() {
           _candidates = candidates;
           _currentIndex = 0;
         });
+        _precacheAhead();
       }
     } catch (e) {
       final msg = cleanError(e);
@@ -93,10 +100,47 @@ class _SwipeScreenState extends State<SwipeScreen> {
     }
   }
 
+  Future<List<CandidateResponse>> _fetchCandidates() => _swipeService.getCandidates(
+        radiusKm: widget.eventId == null ? _radiusKm : null,
+        ageMin: _ageRange.start.round(),
+        ageMax: _ageRange.end.round(),
+        eventId: widget.eventId,
+      );
+
+  /// Charge à l'avance les photos des trois prochaines cartes : elles sont déjà là quand on glisse.
+  void _precacheAhead() {
+    if (!mounted) return;
+    for (var i = _currentIndex; i < _candidates.length && i < _currentIndex + 3; i++) {
+      precacheNetworkPhoto(context, _candidates[i].profile.mainPhotoUrl);
+    }
+  }
+
+  /// Quand il ne reste que quelques cartes, on va chercher la suite sans faire attendre :
+  /// le serveur ne renvoie pas les profils déjà vus, et on ignore ceux qu'on a déjà en main.
+  Future<void> _prefetchMore() async {
+    if (_prefetching) return;
+    _prefetching = true;
+    try {
+      final more = await _fetchCandidates();
+      if (!mounted) return;
+      final known = _candidates.map((c) => c.profile.userId).toSet();
+      final fresh = more.where((c) => !known.contains(c.profile.userId)).toList();
+      if (fresh.isNotEmpty) {
+        setState(() => _candidates = [..._candidates, ...fresh]);
+        _precacheAhead();
+      }
+    } catch (_) {
+      // la suite sera demandée normalement quand les cartes seront épuisées
+    } finally {
+      _prefetching = false;
+    }
+  }
+
   Future<void> _useGps() async {
     final result = await LocationHelper.updateFromDevice();
     if (!mounted) return;
     if (result == LocationResult.ok) {
+      _myProfile = null; // la position a changé
       _load();
     } else {
       showSnack(context, LocationHelper.describe(result), error: true);
@@ -106,6 +150,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
   Future<void> _useDefaultCity() async {
     try {
       await LocationHelper.useDefaultCity();
+      _myProfile = null;
       if (mounted) _load();
     } catch (e) {
       if (mounted) showSnack(context, cleanError(e), error: true);
@@ -119,6 +164,8 @@ class _SwipeScreenState extends State<SwipeScreen> {
       _isSwiping = true;
       _currentIndex++;
     });
+    _precacheAhead();
+    if (_candidates.length - _currentIndex <= 3) _prefetchMore();
 
     try {
       final res = await _swipeService.swipe(candidate.profile.userId, liked);

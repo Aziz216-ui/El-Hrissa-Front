@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart' show ImageRenderMethodForWeb;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../utils/image_url.dart';
 
 /// Photo réseau avec repli propre (icône) quand l'URL est absente ou en erreur.
 class NetworkPhoto extends StatelessWidget {
@@ -10,7 +11,16 @@ class NetworkPhoto extends StatelessWidget {
   final double? height;
   final BoxFit fit;
 
-  const NetworkPhoto({super.key, required this.url, this.width, this.height, this.fit = BoxFit.cover});
+  /// Largeur demandée au serveur d'images (pixels). Par défaut : trois fois la largeur affichée, ou 900.
+  final int? maxWidth;
+
+  const NetworkPhoto({super.key, required this.url, this.width, this.height, this.fit = BoxFit.cover, this.maxWidth});
+
+  /// Adresse réellement chargée : une version réduite des photos Cloudinary.
+  static String sourceFor(String url, {double? width, int? maxWidth}) {
+    final target = maxWidth ?? ((width != null && width.isFinite) ? (width * 3).round().clamp(120, 1200) : 900);
+    return optimizedImageUrl(url, width: target);
+  }
 
   Widget _fallback() => Container(
         width: width,
@@ -24,7 +34,7 @@ class NetworkPhoto extends StatelessWidget {
     final u = url;
     if (u == null || u.isEmpty) return _fallback();
     return CachedNetworkImage(
-      imageUrl: u,
+      imageUrl: sourceFor(u, width: width, maxWidth: maxWidth),
       width: width,
       height: height,
       fit: fit,
@@ -53,4 +63,19 @@ class UserAvatar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Charge une photo à l'avance pour qu'elle s'affiche tout de suite quand la carte arrive.
+/// Les erreurs sont ignorées : ce n'est qu'un coup de pouce.
+Future<void> precacheNetworkPhoto(BuildContext context, String? url, {double? width, int? maxWidth}) async {
+  if (url == null || url.isEmpty) return;
+  try {
+    await precacheImage(
+      CachedNetworkImageProvider(
+        NetworkPhoto.sourceFor(url, width: width, maxWidth: maxWidth),
+        imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
+      ),
+      context,
+    );
+  } catch (_) {}
 }

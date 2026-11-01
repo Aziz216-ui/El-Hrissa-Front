@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import '../api/api_client.dart';
 import '../api/api_error.dart';
 import '../api/endpoints.dart';
@@ -18,6 +18,18 @@ class MessageService {
       return content.map((m) => MessageResponse.fromJson(m)).toList();
     } on DioException catch (e) {
       throw Exception(apiErrorMessage(e, 'Impossible de charger les messages'));
+    }
+  }
+
+  /// Dernier message de chaque conversation, en un seul appel (clé : identifiant du match).
+  /// Renvoie null si le serveur ne connaît pas encore cette route : l'écran retombe sur l'ancien chemin.
+  Future<Map<int, MessageResponse>?> getLastMessages() async {
+    try {
+      final response = await _api.dio.get('/api/matches/last-messages');
+      final list = (response.data as List<dynamic>).map((m) => MessageResponse.fromJson(m));
+      return {for (final m in list) m.matchId: m};
+    } on DioException {
+      return null;
     }
   }
 
