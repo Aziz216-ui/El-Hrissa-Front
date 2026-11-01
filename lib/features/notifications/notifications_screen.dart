@@ -58,13 +58,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     if (!mounted) return;
     // NEW_MATCH / NEW_MESSAGE / NEW_REQUEST : tous mènent aux messages (les demandes y sont en haut)
-    context.go('/chat');
+    // Décision de vérification : on ouvre le profil ; les autres types mènent aux messages (les demandes y sont en haut)
+    context.go(n.type.startsWith('VERIFICATION_') ? '/profile' : '/chat');
   }
 
   IconData _icon(String type) {
     switch (type) {
       case 'NEW_MATCH':
         return Icons.favorite;
+      case 'VERIFICATION_APPROVED':
+        return Icons.verified;
+      case 'VERIFICATION_REJECTED':
+        return Icons.cancel_outlined;
       case 'NEW_REQUEST':
         return Icons.person_add_alt_1;
       default:

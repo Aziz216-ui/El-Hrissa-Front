@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/models/message_models.dart';
@@ -40,18 +41,29 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = true;
   String? _error;
   String _query = '';
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Nouvelles demandes et nouveaux messages sans recharger la page
+    _timer = Timer.periodic(const Duration(seconds: 20), (_) => _load(silent: true));
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
     try {
       final matches = await _swipeService.getMyMatches();
       // Dernier message de chaque conversation (une erreur ponctuelle ne bloque pas la liste)
@@ -80,9 +92,9 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = cleanError(e));
+      if (mounted && !silent) setState(() => _error = cleanError(e));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && !silent) setState(() => _isLoading = false);
     }
   }
 
