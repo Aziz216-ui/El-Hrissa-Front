@@ -173,10 +173,10 @@ void main() {
     expect(await events.getJoinedEventIds(), isEmpty);
     await events.joinEvent(created.id);
     expect(await events.getJoinedEventIds(), contains(created.id));
-    // Sans profil créé, le participant est ignoré mais la liste ne plante pas
+    // On ne se voit pas soi-même dans la liste des participants
     expect(await events.getAttendees(created.id), isEmpty);
     await ProfileService().getMyProfile(); // crée le profil à la demande
-    expect(await events.getAttendees(created.id), hasLength(1));
+    expect(await events.getAttendees(created.id), isEmpty);
     await events.leaveEvent(created.id);
     expect(await events.getJoinedEventIds(), isEmpty);
 

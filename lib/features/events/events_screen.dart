@@ -4,6 +4,7 @@ import '../../core/auth/auth_state.dart';
 import '../../core/models/event_models.dart';
 import '../../core/models/profile_models.dart';
 import '../../core/services/event_service.dart';
+import '../../core/services/swipe_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/utils/format.dart';
@@ -598,6 +599,16 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
     });
   }
 
+  void _openAttendee(PublicProfileResponse person) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surfaceWhite,
+      builder: (_) => _AttendeeSheet(person: person, eventName: widget.event.name),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final e = widget.event;
@@ -656,18 +667,30 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
                 spacing: 12,
                 runSpacing: 12,
                 children: _attendees!
-                    .map((a) => Column(children: [
-                          UserAvatar(url: a.mainPhotoUrl, radius: 26),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            width: 64,
-                            child: Text(a.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: AppTextStyles.labelSm),
+                    .map((a) => Semantics(
+                          button: true,
+                          label: 'Voir le profil de ${a.displayName}',
+                          excludeSemantics: true,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => _openAttendee(a),
+                            child: Padding(
+                              padding: const EdgeInsets.all(2),
+                              child: Column(children: [
+                                UserAvatar(url: a.mainPhotoUrl, radius: 26),
+                                const SizedBox(height: 4),
+                                SizedBox(
+                                  width: 64,
+                                  child: Text(a.displayName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.labelSm),
+                                ),
+                              ]),
+                            ),
                           ),
-                        ]))
+                        ))
                     .toList(),
               ),
           ],
@@ -726,6 +749,117 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
       case EventAction.suggestion:
         return const [_SuggestionNote()];
     }
+  }
+}
+
+/// Une personne qui va au même événement : sa photo, sa bio, et un bouton pour lui dire qu'on aimerait la connaître.
+class _AttendeeSheet extends StatefulWidget {
+  final PublicProfileResponse person;
+  final String eventName;
+  const _AttendeeSheet({required this.person, required this.eventName});
+
+  @override
+  State<_AttendeeSheet> createState() => _AttendeeSheetState();
+}
+
+class _AttendeeSheetState extends State<_AttendeeSheet> {
+  bool _busy = false;
+  bool _sent = false;
+  int? _matchId;
+
+  Future<void> _like() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final result = await SwipeService().swipe(widget.person.userId, true);
+      if (!mounted) return;
+      setState(() {
+        _sent = true;
+        _matchId = result.matched ? result.matchId : null;
+      });
+    } catch (e) {
+      if (mounted) showSnack(context, cleanError(e), error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _openChat() {
+    final p = widget.person;
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.push('/chat/detail', extra: {
+      'matchId': _matchId,
+      'otherUserId': p.userId,
+      'userName': p.displayName,
+      'userPhotoUrl': p.mainPhotoUrl,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.person;
+    final title = p.age == null ? p.displayName : '${p.displayName}, ${p.age}';
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              child: AspectRatio(aspectRatio: 1, child: NetworkPhoto(url: p.mainPhotoUrl)),
+            ),
+            const SizedBox(height: 16),
+            Text(title, style: AppTextStyles.headlineMd),
+            const SizedBox(height: 4),
+            Text('Va aussi à « ${widget.eventName} »', style: AppTextStyles.bodyMdMuted),
+            if (p.bio != null && p.bio!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(p.bio!, style: AppTextStyles.bodyMd),
+            ],
+            if (p.interests.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: p.interests
+                    .map((i) => Chip(label: Text(i), backgroundColor: AppColors.sidiTint, side: BorderSide.none))
+                    .toList(),
+              ),
+            ],
+            const SizedBox(height: 20),
+            if (_matchId != null) ...[
+              Text('C\'est réciproque : vous pouvez vous écrire.',
+                  style: AppTextStyles.bodyMd.copyWith(color: AppColors.sidi)),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: _openChat,
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Écrire'),
+              ),
+            ] else if (_sent)
+              Row(children: [
+                const Icon(Icons.check_circle_outline, color: AppColors.sidi),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('C\'est noté. Si cette personne vous aime aussi, la conversation s\'ouvrira dans vos messages.',
+                      style: AppTextStyles.bodyMd.copyWith(color: AppColors.sidi)),
+                ),
+              ])
+            else
+              ElevatedButton.icon(
+                onPressed: _busy ? null : _like,
+                icon: _busy
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.favorite_border_rounded),
+                label: const Text('J\'aimerais la connaître'),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
