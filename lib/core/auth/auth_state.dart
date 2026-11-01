@@ -14,6 +14,10 @@ class AuthState extends ChangeNotifier {
 
   bool? get loggedIn => _loggedIn;
   bool get isOrganizer => _role?.toUpperCase() == 'ORGANISATEUR';
+  bool get isModerator => _role?.toUpperCase() == 'MODERATEUR';
+
+  /// Accès à l'espace de modération (vérifications, signalements, statistiques).
+  bool get canModerate => isOrganizer || isModerator;
 
   /// Compte créé via Google : genre et date de naissance restent à renseigner.
   bool get needsIdentity => _needsIdentity;

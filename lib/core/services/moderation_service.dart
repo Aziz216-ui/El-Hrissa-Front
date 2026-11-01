@@ -67,4 +67,13 @@ class ModerationService {
       throw Exception(apiErrorMessage(e, 'Impossible d\'enregistrer la décision'));
     }
   }
+
+  Future<AppStats> getStats() async {
+    try {
+      final response = await _api.dio.get(Endpoints.stats);
+      return AppStats.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(apiErrorMessage(e, 'Impossible de charger les statistiques'));
+    }
+  }
 }

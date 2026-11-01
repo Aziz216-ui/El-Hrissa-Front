@@ -343,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _SettingItem(Icons.verified_outlined, 'Vérifier mon profil', _verifyProfile),
       _SettingItem(Icons.notifications_outlined, 'Notifications', () => context.push('/notifications')),
       _SettingItem(Icons.block, 'Utilisateurs bloqués', () => context.push('/blocked')),
-      if (AuthState.instance.isOrganizer)
+      if (AuthState.instance.canModerate)
         _SettingItem(Icons.admin_panel_settings_outlined, 'Modération', () => context.push('/moderation')),
       _SettingItem(Icons.mark_email_read_outlined, "Renvoyer l'email de vérification", _resendVerificationEmail),
       _SettingItem(Icons.description_outlined, "Conditions d'utilisation", () => context.push('/terms')),

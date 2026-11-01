@@ -60,3 +60,43 @@ String reportStatusLabel(String status) {
       return status;
   }
 }
+
+/// Chiffres globaux renvoyés par GET /api/stats.
+class AppStats {
+  final int totalUsers;
+  final int emailVerifiedUsers;
+  final int menCount;
+  final int womenCount;
+  final int newProfilesLast7Days;
+  final int verificationPending;
+  final int verificationApproved;
+  final int verificationRejected;
+  final int verificationNotSubmitted;
+  final int totalMatches;
+  final int matchesLast7Days;
+  final int totalMessages;
+  final int messagesLast7Days;
+  final int totalEvents;
+  final int upcomingEvents;
+  final int reportsPending;
+  final int reportsTotal;
+
+  AppStats.fromJson(Map<String, dynamic> j)
+      : totalUsers = (j['totalUsers'] ?? 0) as int,
+        emailVerifiedUsers = (j['emailVerifiedUsers'] ?? 0) as int,
+        menCount = (j['menCount'] ?? 0) as int,
+        womenCount = (j['womenCount'] ?? 0) as int,
+        newProfilesLast7Days = (j['newProfilesLast7Days'] ?? 0) as int,
+        verificationPending = (j['verificationPending'] ?? 0) as int,
+        verificationApproved = (j['verificationApproved'] ?? 0) as int,
+        verificationRejected = (j['verificationRejected'] ?? 0) as int,
+        verificationNotSubmitted = (j['verificationNotSubmitted'] ?? 0) as int,
+        totalMatches = (j['totalMatches'] ?? 0) as int,
+        matchesLast7Days = (j['matchesLast7Days'] ?? 0) as int,
+        totalMessages = (j['totalMessages'] ?? 0) as int,
+        messagesLast7Days = (j['messagesLast7Days'] ?? 0) as int,
+        totalEvents = (j['totalEvents'] ?? 0) as int,
+        upcomingEvents = (j['upcomingEvents'] ?? 0) as int,
+        reportsPending = (j['reportsPending'] ?? 0) as int,
+        reportsTotal = (j['reportsTotal'] ?? 0) as int;
+}
