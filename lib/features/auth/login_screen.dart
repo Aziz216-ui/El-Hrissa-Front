@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/auth/remembered_login.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -21,9 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
 
-  static const _storage = FlutterSecureStorage();
-  static const _rememberedEmailKey = 'remembered_email';
-
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _rememberMe = true;
@@ -32,30 +29,27 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRememberedEmail();
+    _loadRemembered();
   }
 
-  /// Le mot de passe n'est jamais gardé par l'app : seul l'email est retenu,
-  /// et le gestionnaire de mots de passe du téléphone ou du navigateur remplit le reste.
-  Future<void> _loadRememberedEmail() async {
-    try {
-      final email = await _storage.read(key: _rememberedEmailKey);
-      if (!mounted || email == null || email.isEmpty) return;
-      if (_emailController.text.isEmpty) _emailController.text = email;
-    } catch (_) {
-      // stockage indisponible (navigation privée, tests) : on laisse le champ vide
+  /// Préremplit l'email (et le mot de passe dans l'app mobile) si l'utilisateur l'a demandé.
+  Future<void> _loadRemembered() async {
+    final saved = await RememberedLogin.load();
+    if (!mounted || saved == null) return;
+    if (_emailController.text.isEmpty) _emailController.text = saved.email;
+    if (_passwordController.text.isEmpty) {
+      _passwordController.text = saved.password;
     }
+    setState(() {});
   }
 
-  Future<void> _saveRememberedEmail() async {
-    try {
-      if (_rememberMe) {
-        await _storage.write(
-            key: _rememberedEmailKey, value: _emailController.text.trim());
-      } else {
-        await _storage.delete(key: _rememberedEmailKey);
-      }
-    } catch (_) {}
+  Future<void> _saveRemembered() async {
+    if (_rememberMe) {
+      await RememberedLogin.save(
+          _emailController.text.trim(), _passwordController.text);
+    } else {
+      await RememberedLogin.clear();
+    }
   }
 
   @override
@@ -78,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text,
         _passwordController.text,
       );
-      await _saveRememberedEmail();
+      await _saveRemembered();
       // Indique au système que la connexion a réussi : il propose d'enregistrer le mot de passe
       TextInput.finishAutofillContext();
       if (mounted) {

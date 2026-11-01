@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../api/api_error.dart';
 import '../api/endpoints.dart';
 import '../auth/auth_state.dart';
+import '../auth/remembered_login.dart';
 import '../models/auth_models.dart';
 
 class AuthService {
@@ -134,6 +135,7 @@ class AuthService {
     } on DioException catch (e) {
       throw Exception(apiErrorMessage(e, 'Impossible de supprimer le compte'));
     }
+    await RememberedLogin.clear();
     await logout();
   }
 
