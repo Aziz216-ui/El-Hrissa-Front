@@ -5,8 +5,13 @@ class Endpoints {
   ///   flutter run --dart-define=API_BASE_URL=https://mon-api.example.com
   static const String _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
 
+  /// Serveur en ligne. Une version « release » l'utilise par défaut : un APK compilé sans
+  /// --dart-define=API_BASE_URL ne doit jamais viser l'adresse de l'émulateur (10.0.2.2).
+  static const String _productionUrl = 'https://el-hrissa.onrender.com';
+
   static String get baseUrl {
     if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    if (kReleaseMode) return _productionUrl;
     if (kIsWeb) return 'http://localhost:8086';
     if (defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:8086'; // hôte vu depuis l'émulateur Android
