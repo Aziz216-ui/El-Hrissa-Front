@@ -4,7 +4,9 @@ import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/harissa_shell.dart';
+import '../../shared/widgets/state_views.dart';
 import '../legal/legal_screen.dart';
+import '../organizer/organizer_request_form.dart';
 import 'google_sign_in_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -25,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   DateTime _dateNaissance = DateTime(2000, 1, 1);
   String _selectedGender = 'MEN'; // 'MEN' or 'WOMEN'
+  final _organizerForm = OrganizerFormControllers();
+  bool _wantsOrganizer = false;
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
@@ -36,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _prenomController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _organizerForm.dispose();
     super.dispose();
   }
 
@@ -73,7 +78,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
       );
 
+      // Organisateur : le compte est créé comme visiteur, la demande part ensuite pour examen
+      String? organizerNote;
+      if (_wantsOrganizer) {
+        try {
+          await _organizerForm.submit();
+          organizerNote = "Compte créé. Votre demande d'organisateur est en cours d'examen.";
+        } catch (_) {
+          organizerNote = "Compte créé, mais la demande d'organisateur n'est pas partie : refaites-la depuis votre profil.";
+        }
+      }
+
       if (mounted) {
+        if (organizerNote != null) showSnack(context, organizerNote);
         context.go('/home');
       }
     } catch (e) {
@@ -114,6 +131,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
+
+                _RoleChoice(
+                  wantsOrganizer: _wantsOrganizer,
+                  onChanged: (value) => setState(() => _wantsOrganizer = value),
+                ),
+                if (_wantsOrganizer) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    "Un modérateur examine votre demande avant de vous donner accès à la création d'événements. "
+                    "En attendant, vous utilisez l'app comme visiteur.",
+                    style: AppTextStyles.labelMd,
+                  ),
+                  const SizedBox(height: 12),
+                  OrganizerFormFields(controllers: _organizerForm),
+                ],
+                const SizedBox(height: 20),
 
                 // Prénom & Nom
                 Row(
@@ -274,6 +307,83 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
               ],
             ),
+      ),
+    );
+  }
+}
+
+
+/// « Je cherche des sorties » ou « J'organise des sorties » : deux grandes cartes à choisir.
+class _RoleChoice extends StatelessWidget {
+  final bool wantsOrganizer;
+  final ValueChanged<bool> onChanged;
+  const _RoleChoice({required this.wantsOrganizer, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    // IntrinsicHeight : les deux cartes ont la même hauteur, même dans une page qui défile
+    return IntrinsicHeight(
+        child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _card(
+            icon: Icons.favorite_border_rounded,
+            title: 'Visiteur',
+            subtitle: 'Je cherche des sorties et des rencontres',
+            selected: !wantsOrganizer,
+            onTap: () => onChanged(false),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _card(
+            icon: Icons.celebration_outlined,
+            title: 'Organisateur',
+            subtitle: "J'organise des sorties ou des événements",
+            selected: wantsOrganizer,
+            onTap: () => onChanged(true),
+          ),
+        ),
+      ],
+    ));
+  }
+
+  Widget _card({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$title : $subtitle',
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? AppColors.pastelPink : AppColors.surfaceWhite,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: selected ? AppColors.primary : AppColors.outlineVariant, width: selected ? 2 : 1),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: selected ? AppColors.primary : AppColors.onSurfaceVariant),
+                const SizedBox(height: 8),
+                Text(title, style: AppTextStyles.titleMd.copyWith(fontSize: 16, color: selected ? AppColors.primary : AppColors.onSurface)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: AppTextStyles.labelSm),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import '../../core/models/event_models.dart';
 import '../../core/models/profile_models.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/event_service.dart';
+import '../../core/services/organizer_request_service.dart';
 import '../../core/services/swipe_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -46,6 +47,10 @@ class _EventsScreenState extends State<EventsScreen> {
   void initState() {
     super.initState();
     AuthService().getCurrentUserId().then((id) => _myId = id);
+    // Une demande d'organisateur acceptée donne accès à « Créer » sans reconnexion
+    OrganizerRequestService().syncRole().then((_) {
+      if (mounted) setState(() {});
+    });
     _loadFilters();
     _load();
   }
@@ -254,7 +259,7 @@ class _EventsScreenState extends State<EventsScreen> {
           context.push('/organizer/${event.createdByUserId}');
         },
         // Un organisateur ne supprime que ses propres événements
-        canDelete: AuthState.instance.isOrganizer && event.createdByUserId != null && event.createdByUserId == _myId,
+        canDelete: AuthState.instance.canCreateEvents && event.createdByUserId != null && event.createdByUserId == _myId,
         onToggle: () {
           Navigator.pop(context);
           _toggle(event);
@@ -273,7 +278,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: AuthState.instance.isOrganizer
+      floatingActionButton: AuthState.instance.canCreateEvents
           ? FloatingActionButton.extended(
               onPressed: _createEvent,
               backgroundColor: AppColors.primary,
@@ -292,7 +297,7 @@ class _EventsScreenState extends State<EventsScreen> {
               arabic: '\u062e\u0631\u062c\u0627\u062a',
               title: 'Événements',
               actions: [
-                if (AuthState.instance.isOrganizer)
+                if (AuthState.instance.canCreateEvents)
                   BandAction(
                     icon: Icons.event_note_outlined,
                     tooltip: 'Mes événements',

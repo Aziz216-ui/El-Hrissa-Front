@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/auth/auth_state.dart';
+import '../../core/models/organizer_request_models.dart';
 import '../../core/models/profile_models.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/event_service.dart';
+import '../../core/services/organizer_request_service.dart';
 import '../../core/services/profile_service.dart';
 import '../../core/services/swipe_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -15,6 +17,7 @@ import '../../shared/widgets/network_photo.dart';
 import '../../shared/widgets/notification_bell.dart';
 import '../../shared/widgets/state_views.dart';
 import '../../shared/widgets/tab_band.dart';
+import '../organizer/organizer_request_form.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -29,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ProfileResponse? _profile;
   int _matchCount = 0;
   int _eventCount = 0;
+  OrganizerRequestInfo? _orgStatus;
   bool _isLoading = true;
   String? _error;
 
@@ -55,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _matchCount = (results[1] as List).length;
           _eventCount = (results[2] as Set).length;
         });
+        _syncOrganizer();
       }
     } catch (e) {
       if (mounted) setState(() => _error = cleanError(e));
@@ -335,6 +340,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Où en est ma demande d'organisateur ; reprend aussi le nouveau rôle si elle a été acceptée.
+  Future<void> _syncOrganizer() async {
+    final status = await OrganizerRequestService().syncRole();
+    if (mounted) setState(() => _orgStatus = status);
+  }
+
+  Future<void> _openOrganizerForm() async {
+    final sent = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => OrganizerRequestSheet(rejectReason: _orgStatus?.rejectReason),
+    );
+    if (sent == true && mounted) {
+      showSnack(context, "Demande envoyée : un modérateur l'examine.");
+      _syncOrganizer();
+    }
+  }
+
+  /// Un visiteur peut devenir organisateur ; la ligne dit où en est sa demande.
+  List<_SettingItem> _organizerRequestItems() {
+    if (AuthState.instance.canCreateEvents) return const [];
+    final status = _orgStatus;
+    if (status != null && status.isPending) {
+      return [
+        _SettingItem(Icons.hourglass_bottom_rounded, "Demande d'organisateur en cours d'examen",
+            () => showSnack(context, "Un modérateur examine votre demande. Vous serez prévenu dès qu'elle est traitée.")),
+      ];
+    }
+    final rejected = status != null && status.isRejected;
+    return [
+      _SettingItem(Icons.celebration_outlined, rejected ? "Demande d'organisateur refusée : la refaire" : 'Devenir organisateur',
+          _openOrganizerForm),
+    ];
+  }
+
   Widget _buildSettings() {
     final items = <_SettingItem>[
       _SettingItem(Icons.edit_outlined, 'Modifier mon profil et mes photos',
@@ -343,7 +383,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _SettingItem(Icons.verified_outlined, 'Vérifier mon profil', _verifyProfile),
       _SettingItem(Icons.notifications_outlined, 'Notifications', () => context.push('/notifications')),
       _SettingItem(Icons.block, 'Utilisateurs bloqués', () => context.push('/blocked')),
-      if (AuthState.instance.isOrganizer)
+      ..._organizerRequestItems(),
+      if (AuthState.instance.canCreateEvents)
         _SettingItem(Icons.event_note_outlined, 'Mes événements', () => context.push('/my-events')),
       if (AuthState.instance.canModerate)
         _SettingItem(Icons.admin_panel_settings_outlined, 'Modération', () => context.push('/moderation')),

@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
+    The base href is replaced by the value of the `--base-href` argument provided to `flutter build`.
   -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Elahrisa : rencontres et événements en Tunisie">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Elahrisa : rencontres et sorties en Tunisie. Retrouvez des gens qui vont aux mêmes événements que vous.">
+  <meta name="theme-color" content="#B3141D">
+
+  <!-- Aperçu quand le lien est partagé -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Elahrisa">
+  <meta property="og:description" content="Rencontres et sorties en Tunisie : retrouvez ceux qui vont aux mêmes événements que vous.">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta name="twitter:card" content="summary">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Elahrisa">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -31,16 +31,48 @@
 
   <title>Elahrisa</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #B3141D; }
+    /* Écran d'attente pendant le chargement de l'app : fond rouge, piment, petit cercle qui tourne */
+    #splash {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+      background: #B3141D; transition: opacity .35s ease;
+    }
+    #splash.done { opacity: 0; pointer-events: none; }
+    #splash .logo {
+      width: 120px; height: 120px; border-radius: 28px; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 14px 40px rgba(0,0,0,.28);
+    }
+    #splash .logo img { width: 84px; height: 84px; }
+    #splash .name { color: #fff; font: 700 26px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .5px; }
+    #splash .ring {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.35); border-top-color: #fff;
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { #splash .ring { animation-duration: 3s; } }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <div id="splash" role="status" aria-live="polite">
+    <div class="logo"><img src="icons/Icon-192.png" alt=""></div>
+    <div class="name">Elahrisa</div>
+    <div class="ring" aria-hidden="true"></div>
+    <noscript><span style="color:#fff;font-family:sans-serif">Activez JavaScript pour utiliser Elahrisa.</span></noscript>
+  </div>
+  <script>
+    // L'écran d'attente disparaît dès que la première image de l'app est dessinée
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (!splash) return;
+      splash.classList.add('done');
+      setTimeout(function () { splash.remove(); }, 450);
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

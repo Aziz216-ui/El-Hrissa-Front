@@ -68,6 +68,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     switch (type) {
       case 'NEW_ATTENDEE':
         return '/my-events';
+      case 'NEW_ORGANIZER_REQUEST':
+        return '/moderation';
+      case 'ORGANIZER_APPROVED':
+      case 'ORGANIZER_REJECTED':
+        return '/profile';
       case 'WAITLIST_PROMOTED':
       case 'EVENT_REMINDER':
       case 'EVENT_CROSSED':
@@ -81,6 +86,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     switch (type) {
       case 'NEW_ATTENDEE':
         return Icons.group_add_outlined;
+      case 'NEW_ORGANIZER_REQUEST':
+      case 'ORGANIZER_APPROVED':
+        return Icons.celebration_outlined;
+      case 'ORGANIZER_REJECTED':
+        return Icons.cancel_outlined;
       case 'WAITLIST_PROMOTED':
         return Icons.event_available;
       case 'EVENT_REMINDER':

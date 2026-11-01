@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../auth/auth_state.dart';
 import 'endpoints.dart';
@@ -81,6 +81,8 @@ class ApiClient {
   }
 
   Future<String?> getRole() => _storage.read(key: _roleKey);
+
+  Future<void> setRole(String role) => _storage.write(key: _roleKey, value: role);
 
   Future<bool> getNeedsIdentity() async => (await _storage.read(key: _needsIdentityKey)) == 'true';
 

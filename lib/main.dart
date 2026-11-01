@@ -1,8 +1,11 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'core/auth/auth_state.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'shared/widgets/web_frame.dart';
 import 'features/auth/complete_identity_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
@@ -102,6 +105,19 @@ final GoRouter _router = GoRouter(
   ),
 );
 
+/// Sur le site, on glisse aussi à la souris (cartes, listes) et pas seulement au doigt.
+class _AnyDeviceScrollBehavior extends MaterialScrollBehavior {
+  const _AnyDeviceScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.trackpad,
+      };
+}
+
 class ElHrissaApp extends StatelessWidget {
   const ElHrissaApp({super.key});
 
@@ -111,6 +127,8 @@ class ElHrissaApp extends StatelessWidget {
       title: 'Elahrisa',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      scrollBehavior: const _AnyDeviceScrollBehavior(),
+      builder: (context, child) => WebFrame(child: child ?? const SizedBox.shrink()),
       routerConfig: _router,
     );
   }

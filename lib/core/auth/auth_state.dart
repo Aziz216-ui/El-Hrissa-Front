@@ -15,9 +15,14 @@ class AuthState extends ChangeNotifier {
   bool? get loggedIn => _loggedIn;
   bool get isOrganizer => _role?.toUpperCase() == 'ORGANISATEUR';
   bool get isModerator => _role?.toUpperCase() == 'MODERATEUR';
+  String? get role => _role;
 
-  /// Accès à l'espace de modération (vérifications, signalements, statistiques).
-  bool get canModerate => isOrganizer || isModerator;
+  /// Créer et gérer des sorties : les organisateurs validés, et l'équipe de modération.
+  bool get canCreateEvents => isOrganizer || isModerator;
+
+  /// Accès à l'espace de modération (vérifications, signalements, statistiques, demandes d'organisateur) :
+  /// réservé à l'équipe. Un organisateur extérieur n'y a pas accès.
+  bool get canModerate => isModerator;
 
   /// Compte créé via Google : genre et date de naissance restent à renseigner.
   bool get needsIdentity => _needsIdentity;
@@ -27,6 +32,12 @@ class AuthState extends ChangeNotifier {
     _loggedIn = await api.hasToken();
     _role = await api.getRole();
     _needsIdentity = _loggedIn == true && await api.getNeedsIdentity();
+    notifyListeners();
+  }
+
+  /// Le rôle a changé côté serveur (demande d'organisateur acceptée) : on le met à jour sans reconnexion.
+  void setRole(String? role) {
+    _role = role;
     notifyListeners();
   }
 

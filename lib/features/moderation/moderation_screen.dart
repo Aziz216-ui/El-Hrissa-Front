@@ -6,27 +6,30 @@ import '../../core/services/moderation_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/state_views.dart';
+import 'organizers_tab.dart';
 import 'stats_tab.dart';
 
-/// Espace de modération (modérateurs et organisateurs) : signalements, selfies de vérification et statistiques.
+/// Espace de modération (équipe seulement) : signalements, selfies de vérification, demandes d'organisateur et statistiques.
 class ModerationScreen extends StatelessWidget {
   const ModerationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: Text('Modération', style: AppTextStyles.headlineMd),
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             labelColor: AppColors.primary,
             indicatorColor: AppColors.primary,
-            tabs: [Tab(text: 'Signalements'), Tab(text: 'Vérifications'), Tab(text: 'Stats')],
+            tabs: [Tab(text: 'Signalements'), Tab(text: 'Vérifications'), Tab(text: 'Organisateurs'), Tab(text: 'Stats')],
           ),
         ),
-        body: const TabBarView(children: [_ReportsTab(), _VerificationsTab(), StatsTab()]),
+        body: const TabBarView(children: [_ReportsTab(), _VerificationsTab(), OrganizersTab(), StatsTab()]),
       ),
     );
   }
